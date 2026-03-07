@@ -1,0 +1,3 @@
+./build.sh
+
+qemu-system-x86_64 -cdrom iso/output/mms-os.iso
