@@ -401,10 +401,31 @@ void kernel_main()
 {
     clear_screen();
 
+    println("                  *                       ");
+    println("                   *                      ");
+    println("                   *+=----        **      ");
+    println("                   =-------      *        ");
+    println("    **       *****+--------+*****         ");
+    println("     *      **    --------=+     *        ");
+    println("      *++++**      ===--=++       **      ");
+    println("     +=-----=      =-::::-=               ");
+    println("    *=-------+*++++-::::::-+*****       **");
+    println("    +--------======-::::::-=    **      * ");
+    println("      -----==========-::--=      **   **  ");
+    println("      **   ++========----==      ++====++ ");
+    println("    **      ++======------==    +=======+*");
+    println("    *        **++++-------==-::-=========*");
+    println("                   ==------:::::-======== ");
+    println("                    *++++=-::::::-++++**  ");
+    println("                          --::::-=        ");
+    println("                           +====*         ");
+    println("                         **      *        ");
+    println("                        ***      ***      ");
+    println("                          *               ");
+    println("                           **             ");
+
     println("Welcome to MMS-OS!");
     println("Type 'help' for commands");
-    println("");
-
     print("shell > ");
 
     while (1)
