@@ -213,7 +213,7 @@ bool strcmp(const char* a, const char* b)
 void run_calc()
 {
     println("=== Calculator ===");
-    println("first number > ");
+    print("First number > ");
     bool running = true;
     int first_number = 0;
     while (running)
@@ -241,7 +241,7 @@ void run_calc()
         }
     }
     putchar('\n');
-    println("second number > "); 
+    print("Second number > "); 
     bool running2 = true;
     int second_number = 0;
     while (running2)
@@ -274,7 +274,7 @@ void run_calc()
     println("2. -");
     println("3. *");
     println("4. /");
-    println("operation > ");
+    print("Operation > ");
     bool running3 = true;
     int output = 0;
     while (running3)
@@ -343,7 +343,7 @@ void run_calc()
         }
     }
     putchar('\n');
-    println("Answer > ");
+    print("Answer > ");
     printint(output); 
     calc_index = 0;
     calc_index2 = 0;
