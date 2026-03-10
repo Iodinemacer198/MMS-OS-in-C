@@ -242,7 +242,6 @@ void run_calc()
 
         if (!key)
         {
-            /* __asm__ volatile("hlt"); */
             continue;
         }
         else if (isdigit(key))
@@ -270,7 +269,6 @@ void run_calc()
 
         if (!key)
         {
-            /* __asm__ volatile("hlt"); */
             continue;
         }
         else if (isdigit(key))
@@ -303,7 +301,6 @@ void run_calc()
 
         if (!key)
         {
-            /* __asm__ volatile("hlt"); */
             continue;
         }
         else if (isdigit(key))
@@ -384,6 +381,10 @@ void run_command()
         println("calc :: Simple calculator");
         println("clear :: Clears the screen");
         println("reboot :: Reboots system");
+        println(" ");
+        println("test read :: Reads test file");
+        println("test view :: Simple FEX");
+        println(" ");
         println("shutdown :: Shuts down system");
     }
     else if (strcmp(cmd_buffer, "clear"))
@@ -395,14 +396,18 @@ void run_command()
         println("Molecular Multiverse Services OS: developed by the realiodinemacer with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
-    else if (strcmp(cmd_buffer, "readtest")) 
+    else if (strcmp(cmd_buffer, "test read")) 
     {
-        char read_buffer[512]; // Create a buffer to hold the disk sector
-        if (vfs_read_file("0:\\system.ini", read_buffer)) {
+        char read_buffer[512];
+        if (vfs_read_file("0:\\test.ini", read_buffer)) {
             println(read_buffer);
         } else {
-            println("Error: 0:\\system.ini not found.");
+            println("Error: 0:\\test.ini not found.");
         }
+    }
+    else if (strcmp(cmd_buffer, "test view"))
+    {
+        vfs_list_files();
     }
     else if (strcmp(cmd_buffer, "calc"))
     {
@@ -476,7 +481,6 @@ void kernel_main()
 
             if (!key)
             {
-                /* __asm__ volatile("hlt"); */
                 continue;
             }
             else if (key == '\n')
@@ -526,7 +530,6 @@ void kernel_main()
 
             if (!key)
             {
-                /* __asm__ volatile("hlt"); */
                 continue;
             }
             else if (key == '\n')
@@ -583,7 +586,6 @@ void kernel_main()
 
             if (!key)
             {
-                /* __asm__ volatile("hlt"); */
                 continue;
             }
             else if (key == '\n')
@@ -624,7 +626,6 @@ void kernel_main()
 
             if (!key)
             {
-                /* __asm__ volatile("hlt"); */
                 continue;
             }
             else if (key == '\n')
