@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdbool.h>
+#include "fs.h"
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -11,11 +12,32 @@ int cursorY = 0;
 
 uint8_t color = 0x0F;
 
-/* VGA TEXT DRIVER */
+int memcmp(const void* s1, const void* s2, int n) {
+    const unsigned char* p1 = s1;
+    const unsigned char* p2 = s2;
+    for (int i = 0; i < n; i++) {
+        if (p1[i] != p2[i]) {
+            return p1[i] - p2[i];
+        }
+    }
+    return 0;
+}
+
+void sleep(uint32_t count) {
+    for (volatile uint32_t i = 0; i < count * 10000; i++) {
+        __asm__ volatile("nop");
+    }
+}
+
+void memset(void* dest, uint8_t val, uint32_t len) {
+    uint8_t* ptr = (uint8_t*)dest;
+    while (len-- > 0) *ptr++ = val;
+}
+
+// Text
 
 void scroll()
 {
-    // Shift all rows up by one
     for (int y = 0; y < VGA_HEIGHT - 1; y++)
     {
         for (int x = 0; x < VGA_WIDTH; x++)
@@ -24,7 +46,6 @@ void scroll()
         }
     }
 
-    // Clear the very last row
     for (int x = 0; x < VGA_WIDTH; x++)
     {
         vga[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = (color << 8) | ' ';
@@ -79,7 +100,7 @@ void clear_screen()
     cursorY = 0;
 }
 
-/* PORT IO */
+// IO
 
 static inline uint8_t inb(uint16_t port)
 {
@@ -150,7 +171,8 @@ void printint(int num)
     while (i--)
         putchar(buf[i]);
 }
-/* KEYBOARD */
+
+// Keyboard
 
 char keyboard_map[128] =
 {
@@ -162,13 +184,11 @@ char keyboard_map[128] =
 
 char get_key()
 {
-    /* Check if keyboard buffer has data */
     if (!(inb(0x64) & 1))
         return 0;
 
     uint8_t scancode = inb(0x60);
 
-    /* Ignore key releases */
     if (scancode & 0x80)
         return 0;
 
@@ -208,7 +228,7 @@ bool strcmp(const char* a, const char* b)
     return a[i] == b[i];
 }
 
-/* Command logic */
+// Command logic
 
 void run_calc()
 {
@@ -352,7 +372,6 @@ void run_calc()
     putchar('\n');
 }
 
-
 void run_command()
 {
     putchar('\n');
@@ -376,9 +395,18 @@ void run_command()
         println("Molecular Multiverse Services OS: developed by the realiodinemacer with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
+    else if (strcmp(cmd_buffer, "readtest")) 
+    {
+        char read_buffer[512]; // Create a buffer to hold the disk sector
+        if (vfs_read_file("0:\\system.ini", read_buffer)) {
+            println(read_buffer);
+        } else {
+            println("Error: 0:\\system.ini not found.");
+        }
+    }
     else if (strcmp(cmd_buffer, "calc"))
     {
-        /* clear_screen(); */
+        // clear_screen();
         run_calc();
     }
     else if (strcmp(cmd_buffer, "shutdown")) shutdown();
@@ -397,9 +425,21 @@ void run_command()
         cmd_buffer[i] = 0;
 }
 
+// Main loop
+
+#define USIN_BUFFER 20
+char usin_buffer[USIN_BUFFER];
+int usin_index = 0;
+
+#define PSIN_BUFFER 20
+char psin_buffer[PSIN_BUFFER];
+int psin_index = 0;
+
 void kernel_main()
 {
     clear_screen();
+
+    vfs_init();
 
     println("                  *                       ");
     println("                   *                      ");
@@ -424,6 +464,206 @@ void kernel_main()
     println("                          *               ");
     println("                           **             ");
 
+    char username_buffer[20];
+    char password_buffer[20];
+    if (vfs_read_file("0:\\password.ini", password_buffer) && vfs_read_file("0:\\username.ini", username_buffer))
+    {
+        print("Username > ");
+        bool userrunning = true;
+        while (userrunning)
+        {
+            char key = get_key();
+
+            if (!key)
+            {
+                /* __asm__ volatile("hlt"); */
+                continue;
+            }
+            else if (key == '\n')
+            {
+                if (memcmp(username_buffer, usin_buffer, 20) == 0)
+                {
+                    userrunning = false;
+                }
+                else 
+                {
+                    putchar('\n');
+                    println("Username incorrect! The system will restart.");
+                    sleep(20000);
+                    reboot();
+                }
+            }
+            else if (key == 8)
+            {
+                if (usin_index > 0)
+                {
+                    usin_index--;
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else 
+            {
+                if (usin_index <= 20)
+                {
+                    putchar(key);
+                    usin_buffer[usin_index] = key;
+                    usin_index++;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
+        putchar('\n');
+        print("Password > ");
+        bool passrunning = true;
+        while (passrunning)
+        {
+            char key = get_key();
+
+            if (!key)
+            {
+                /* __asm__ volatile("hlt"); */
+                continue;
+            }
+            else if (key == '\n')
+            {
+                if (memcmp(password_buffer, psin_buffer, 20))
+                {
+                    putchar('\n');
+                    passrunning = false;
+                }
+                else 
+                {
+                    putchar('\n');
+                    println("Password incorrect! The system will restart.");
+                    sleep(20000);
+                    reboot();
+                }
+            }
+            else if (key == 8)
+            {
+                if (psin_index > 0)
+                {
+                    psin_index--;
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else if (isdigit(key))
+            {
+                if (psin_index <= 20)
+                {
+                    putchar(key);
+                    psin_buffer[psin_index] = key;
+                    psin_index++;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                continue;
+            }
+        }
+    }
+    else
+    {
+        print("New Username > ");
+        bool userrunning = true;
+        while (userrunning)
+        {
+            char key = get_key();
+
+            if (!key)
+            {
+                /* __asm__ volatile("hlt"); */
+                continue;
+            }
+            else if (key == '\n')
+            {
+                vfs_write_file("0:\\username.ini", usin_buffer);
+                userrunning = false;
+            }
+            else if (key == 8)
+            {
+                if (usin_index > 0)
+                {
+                    usin_index--;
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else 
+            {
+                if (usin_index < 20)
+                {
+                    putchar(key);
+                    usin_buffer[usin_index] = key;
+                    usin_index++;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
+        putchar('\n');
+        print("New Password > ");
+        bool passrunning = true;
+        while (passrunning)
+        {
+            char key = get_key();
+
+            if (!key)
+            {
+                /* __asm__ volatile("hlt"); */
+                continue;
+            }
+            else if (key == '\n')
+            {
+                vfs_write_file("0:\\password.ini", psin_buffer);
+                passrunning = false;
+            }
+            else if (key == 8)
+            {
+                if (psin_index > 0)
+                {
+                    psin_index--;
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else if (key)
+            {
+                if (psin_index < 20)
+                {
+                    putchar(key);
+                    psin_buffer[psin_index] = key;
+                    psin_index++;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                continue;
+            }
+        }
+        putchar('\n');
+        println("Successfully registered!");
+    }
+
     println("Welcome to MMS-OS!");
     println("Type 'help' for commands");
     print("shell > ");
@@ -434,7 +674,6 @@ void kernel_main()
 
         if (!key)
         {
-            /* __asm__ volatile("hlt"); */
             continue;
         }
         if (key == '\n')

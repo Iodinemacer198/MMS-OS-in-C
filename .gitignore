@@ -1,4 +1,5 @@
 run.txt
+disk.img
 iso/build/
 iso/output/
 iso/root/boot/kernel.bin

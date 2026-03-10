@@ -6,14 +6,20 @@ mkdir -p iso/root/boot
 mkdir -p iso/output
 
 echo "Compiling kernel (32-bit)..."
-gcc -m32 -ffreestanding -c kernel/kernel.c -o iso/build/kernel.o -O2 -Wall
+# Added -Ikernel/fs so the compiler can find fs.h and ata.h
+gcc -m32 -ffreestanding -Ikernel/fs -c kernel/kernel.c -o iso/build/kernel.o -O2 -Wall
+
+echo "Compiling file system drivers..."
+gcc -m32 -ffreestanding -c kernel/fs/ata.c -o iso/build/ata.o -O2 -Wall
+gcc -m32 -ffreestanding -c kernel/fs/fs.c -o iso/build/fs.o -O2 -Wall
 
 echo "Assembling boot code..."
 nasm -f elf32 boot/boot.asm -o iso/build/boot.o
 
 echo "Linking kernel..."
+# Added ata.o and fs.o to the linker command
 ld -m elf_i386 -T linker.ld -o iso/build/kernel.bin \
-iso/build/boot.o iso/build/kernel.o
+iso/build/boot.o iso/build/kernel.o iso/build/ata.o iso/build/fs.o
 
 echo "Copying kernel..."
 cp iso/build/kernel.bin iso/root/boot/kernel.bin
