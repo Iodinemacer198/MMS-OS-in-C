@@ -5,6 +5,7 @@ extern int strlen(const char* str);
 extern void print(const char* str);
 extern void println(const char* str);
 extern void printint(int num);
+extern bool strcmp(const char* a, const char* b);
 
 int strlen(const char* str) {
     int len = 0;
