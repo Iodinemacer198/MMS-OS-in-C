@@ -380,11 +380,11 @@ void run_command()
         println("about :: OS information");
         println("calc :: Simple calculator");
         println("clear :: Clears the screen");
-        println("reboot :: Reboots system");
         println(" ");
         println("test read :: Reads test file");
         println("test view :: Simple FEX");
         println(" ");
+        println("reboot :: Reboots system");
         println("shutdown :: Shuts down system");
     }
     else if (strcmp(cmd_buffer, "clear"))
