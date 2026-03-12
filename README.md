@@ -18,7 +18,7 @@ This project is the C cousin in MMS-COSMOS (private project), which should allow
 - First run `./build.sh`, then if successful run `./run.sh`
 - Congrats! You are now in MMS-OS!
 
-**Use from release ISO:** (currently unavailable)
+**Use from release ISO:** (iso/output)
 - Load ISO in your system of choice. It should work fine out the box.
 - This OS has been successfully tested in VMware and Qemu. I cannot guarantee its success in another VM or on actual hardware.
 
@@ -33,6 +33,7 @@ For any questions, suggestions, issues, etc, feel free to reach out to @thereali
 MMS-OS is a VERY work-in-progress project. Lag, bugs, etc are to be expected. As more of a hobby project, also expect slow progress and a lack of functionality (especially now that we are working in C). This project is just for fun, don't expect much :)
 
 Some AI was used in the making of this project, especially with parts of the initial setup. I really don't know too much of C, and this is the easiest way for me to learn the language while also making progress. Outside of the initial setup and some other miscellaneous components, it is however entirely my work. If you doubt that, check some of the scripts, there's no way anyone other than a stupid human could make some of those...
+
 
 
 
