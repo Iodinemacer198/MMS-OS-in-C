@@ -1,5 +1,10 @@
+## Deprecated file
 run.txt
+
+## User-specific file system image
 disk.img
+
+## Build outputs
 iso/build/
 iso/output/
 iso/root/boot/kernel.bin

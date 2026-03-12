@@ -257,6 +257,7 @@ void run_command() {
         println("about :: OS information");
         println("calc :: Simple calculator");
         println("clear :: Clears the screen");
+        println("time :: Display current time and date")
         println("wordle :: Plays a game of Wordle");
         println(" ");
         println("test read :: Reads test file");
@@ -269,7 +270,7 @@ void run_command() {
         clear_screen();
     }
     else if (strcmp(cmd_buffer, "about")) {
-        println("Molecular Multiverse Services OS: developed by the realiodinemacer with C.");
+        println("Molecular Multiverse Services OS: developed by the the MMS team with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
     else if (strcmp(cmd_buffer, "test read")) {
