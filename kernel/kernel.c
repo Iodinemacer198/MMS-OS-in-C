@@ -257,7 +257,7 @@ void run_command() {
         println("about :: OS information");
         println("calc :: Simple calculator");
         println("clear :: Clears the screen");
-        println("time :: Display current time and date")
+        println("time :: Display current time and date");
         println("wordle :: Plays a game of Wordle");
         println(" ");
         println("test read :: Reads test file");
