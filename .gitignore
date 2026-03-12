@@ -6,5 +6,4 @@ disk.img
 
 ## Build outputs
 iso/build/
-iso/output/
 iso/root/boot/kernel.bin
