@@ -6,6 +6,7 @@ This project is the C cousin in MMS-COSMOS (private project), which should allow
 ## Features & Overview
 - Command line interface with some commands
 - A simple calculator
+- Wordle game
 - Basic file and login system
 
 ## Build instructions
@@ -27,4 +28,5 @@ For any questions, suggestions, issues, etc, feel free to reach out to @thereali
 MMS-OS is a VERY work-in-progress project. Lag, bugs, etc are to be expected. As more of a hobby project, also expect slow progress and a lack of functionality (especially now that we are working in C). This project is just for fun, don't expect much :)
 
 Some AI was used in the making of this project, especially with parts of the initial setup. I really don't know much of C, and this is the easiest way for me to learn the language while also making progress. Outside of the initial setup and some other miscellaneous components, it is however entirely my work.
+
 
