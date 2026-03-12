@@ -29,22 +29,17 @@ int psin_index = 0;
 char username_buffer[20];
 char password_buffer[20];
 
-void handle_login()
-{
-    if (vfs_read_file("0:\\password.ini", password_buffer) && vfs_read_file("0:\\username.ini", username_buffer))
-    {
+void handle_login() {
+    if (vfs_read_file("0:\\password.ini", password_buffer) && vfs_read_file("0:\\username.ini", username_buffer)) {
         print("Username > ");
         bool userrunning = true;
-        while (userrunning)
-        {
+        while (userrunning) {
             char key = get_key();
 
-            if (!key)
-            {
+            if (!key) {
                 continue;
             }
-            else if (key == '\n')
-            {
+            else if (key == '\n') {
                 if (memcmp(username_buffer, usin_buffer, 20) == 0)
                 {
                     userrunning = false;
@@ -57,26 +52,22 @@ void handle_login()
                     reboot();
                 }
             }
-            else if (key == 8)
-            {
-                if (usin_index > 0)
-                {
+            else if (key == 8) {
+                if (usin_index > 0) {
                     usin_index--;
+                    usin_buffer[usin_index] = '\0';
                     cursorX--;
                     putchar(' ');
                     cursorX--;
                 }
             }
-            else 
-            {
-                if (usin_index <= 20)
-                {
+            else {
+                if (usin_index <= 20) {
                     putchar(key);
                     usin_buffer[usin_index] = key;
                     usin_index++;
                 }
-                else
-                {
+                else {
                     continue;
                 }
             }
@@ -84,23 +75,18 @@ void handle_login()
         putchar('\n');
         print("Password > ");
         bool passrunning = true;
-        while (passrunning)
-        {
+        while (passrunning) {
             char key = get_key();
 
-            if (!key)
-            {
+            if (!key) {
                 continue;
             }
-            else if (key == '\n')
-            {
-                if (strcmp(password_buffer, psin_buffer))
-                {
+            else if (key == '\n') {
+                if (strcmp(password_buffer, psin_buffer)) {
                     putchar('\n');
                     passrunning = false;
                 }
-                else 
-                {
+                else {
                     putchar('\n');
                     println("Password incorrect! The system will restart.");
                     //println(password_buffer);
@@ -109,72 +95,59 @@ void handle_login()
                     reboot();
                 }
             }
-            else if (key == 8)
-            {
-                if (psin_index > 0)
-                {
+            else if (key == 8) {
+                if (psin_index > 0) {
                     psin_index--;
+                    psin_buffer[psin_index] = '\0';
                     cursorX--;
                     putchar(' ');
                     cursorX--;
                 }
             }
-            else if (key)
-            {
-                if (psin_index <= 20)
-                {
+            else if (key) {
+                if (psin_index <= 20) {
                     putchar(key);
                     psin_buffer[psin_index] = key;
                     psin_index++;
                 }
-                else
-                {
+                else {
                     continue;
                 }
             }
-            else
-            {
+            else {
                 continue;
             }
         }
     }
-    else
-    {
+    else {
         print("New Username > ");
         bool userrunning = true;
-        while (userrunning)
-        {
+        while (userrunning) {
             char key = get_key();
 
-            if (!key)
-            {
+            if (!key) {
                 continue;
             }
-            else if (key == '\n')
-            {
+            else if (key == '\n') {
                 vfs_write_file("0:\\username.ini", usin_buffer);
                 userrunning = false;
             }
-            else if (key == 8)
-            {
-                if (usin_index > 0)
-                {
+            else if (key == 8) {
+                if (usin_index > 0) {
                     usin_index--;
+                    usin_buffer[usin_index] = '\0';
                     cursorX--;
                     putchar(' ');
                     cursorX--;
                 }
             }
-            else 
-            {
-                if (usin_index < 20)
-                {
+            else {
+                if (usin_index < 20) {
                     putchar(key);
                     usin_buffer[usin_index] = key;
                     usin_index++;
                 }
-                else
-                {
+                else {
                     continue;
                 }
             }
@@ -182,45 +155,37 @@ void handle_login()
         putchar('\n');
         print("New Password > ");
         bool passrunning = true;
-        while (passrunning)
-        {
+        while (passrunning) {
             char key = get_key();
 
-            if (!key)
-            {
+            if (!key) {
                 continue;
             }
-            else if (key == '\n')
-            {
+            else if (key == '\n') {
                 vfs_write_file("0:\\password.ini", psin_buffer);
                 //println(psin_buffer);
                 passrunning = false;
             }
-            else if (key == 8)
-            {
-                if (psin_index > 0)
-                {
+            else if (key == 8) {
+                if (psin_index > 0) {
                     psin_index--;
+                    psin_buffer[psin_index] = '\0';
                     cursorX--;
                     putchar(' ');
                     cursorX--;
                 }
             }
-            else if (key)
-            {
-                if (psin_index < 20)
-                {
+            else if (key) {
+                if (psin_index < 20) {
                     putchar(key);
                     psin_buffer[psin_index] = key;
                     psin_index++;
                 }
-                else
-                {
+                else {
                     continue;
                 }
             }
-            else
-            {
+            else {
                 continue;
             }
         }

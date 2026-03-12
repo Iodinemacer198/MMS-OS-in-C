@@ -21,28 +21,23 @@ int calc_index2 = 0;
 char calc_buffer3[CALC_BUFFER3];
 int calc_index3 = 0;
 
-void run_calc()
-{
+void run_calc() {
     println("=== Calculator ===");
     print("First number > ");
     bool running = true;
     int first_number = 0;
-    while (running)
-    {
+    while (running) {
         char key = get_key();
 
-        if (!key)
-        {
+        if (!key) {
             continue;
         }
-        else if (isdigit(key))
-        {
+        else if (isdigit(key)) {
             putchar(key);
             calc_buffer[calc_index] = key;
             calc_index++;
         }
-        else if (key == '\n')
-        {
+        else if (key == '\n') {
             first_number = atoi(calc_buffer);
             running = false;
         }
@@ -54,22 +49,18 @@ void run_calc()
     print("Second number > "); 
     bool running2 = true;
     int second_number = 0;
-    while (running2)
-    {
+    while (running2) {
         char key = get_key();
 
-        if (!key)
-        {
+        if (!key) {
             continue;
         }
-        else if (isdigit(key))
-        {
+        else if (isdigit(key)) {
             putchar(key);
             calc_buffer2[calc_index2] = key;
             calc_index2++;
         }
-        else if (key == '\n')
-        {
+        else if (key == '\n') {
             second_number = atoi(calc_buffer2);
             running2 = false;
         }
@@ -86,16 +77,13 @@ void run_calc()
     print("Operation > ");
     bool running3 = true;
     int output = 0;
-    while (running3)
-    {
+    while (running3) {
         char key = get_key();
 
-        if (!key)
-        {
+        if (!key) {
             continue;
         }
-        else if (isdigit(key))
-        {
+        else if (isdigit(key)) {
             if (calc_index3 == 0)
             {
                 putchar(key);
@@ -107,39 +95,31 @@ void run_calc()
                 continue;
             }
         }
-        else if (key == '\n')
-        {
-            if (calc_buffer3[0] == '1') 
-            {
+        else if (key == '\n') {
+            if (calc_buffer3[0] == '1') {
                 output = first_number + second_number;
                 running3 = false;
             }
-            else if (calc_buffer3[0] == '2') 
-            {
+            else if (calc_buffer3[0] == '2') {
                 output = first_number - second_number;
                 running3 = false;
             }
-            else if (calc_buffer3[0] == '3') 
-            {
+            else if (calc_buffer3[0] == '3') {
                 output = first_number * second_number;
                 running3 = false;
             }
-            else if (calc_buffer3[0] == '4') 
-            {
-                if (second_number == 0) 
-                {
+            else if (calc_buffer3[0] == '4') {
+                if (second_number == 0) {
                     putchar('\n');
                     println("Divide by zero error!");
                     running3 = false;
                 }
-                else 
-                {
+                else {
                     output = first_number / second_number;
                     running3 = false;
                 }
             }
-            else 
-            {
+            else {
                 putchar('\n');
                 println("Invalid operation!");
                 running3 = false;

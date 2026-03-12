@@ -3,6 +3,7 @@
 #include "fs.h"
 #include "calc.h"
 #include "login.h"
+#include "wordle.h"
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -38,8 +39,7 @@ void memset(void* dest, uint8_t val, uint32_t len) {
 
 // Text
 
-void scroll()
-{
+void scroll() {
     for (int y = 0; y < VGA_HEIGHT - 1; y++)
     {
         for (int x = 0; x < VGA_WIDTH; x++)
@@ -54,8 +54,7 @@ void scroll()
     }
 }
 
-void putchar(char c)
-{
+void putchar(char c) {
     if (c == '\n')
     {
         cursorX = 0;
@@ -80,20 +79,17 @@ void putchar(char c)
     }
 }
 
-void print(const char* str)
-{
+void print(const char* str) {
     for (int i = 0; str[i] != 0; i++)
         putchar(str[i]);
 }
 
-void println(const char* str)
-{
+void println(const char* str) {
     print(str);
     putchar('\n');
 }
 
-void clear_screen()
-{
+void clear_screen() {
     for (int y = 0; y < VGA_HEIGHT; y++)
         for (int x = 0; x < VGA_WIDTH; x++)
             vga[y * VGA_WIDTH + x] = (color << 8) | ' ';
@@ -104,43 +100,36 @@ void clear_screen()
 
 // IO
 
-static inline uint8_t inb(uint16_t port)
-{
+static inline uint8_t inb(uint16_t port) {
     uint8_t result;
     __asm__ volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
     return result;
 }
 
-static inline void outb(uint16_t port, uint8_t value)
-{
+static inline void outb(uint16_t port, uint8_t value) {
     __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port));
 }
 
-static inline void outw(uint16_t port, uint16_t value)
-{
+static inline void outw(uint16_t port, uint16_t value) {
     __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
 }
 
-void reboot()
-{
+void reboot() {
     while (inb(0x64) & 0x02);
     outb(0x64, 0xFE);
 
     while (1);
 }
 
-void shutdown()
-{
+void shutdown() {
     outw(0x604, 0x2000);
 }
 
-bool isdigit(char c)
-{
+bool isdigit(char c) {
     return (c >= '0' && c <= '9');
 }
 
-int atoi(const char* str)
-{
+int atoi(const char* str) {
     int result = 0;
     int i = 0;
 
@@ -153,8 +142,7 @@ int atoi(const char* str)
     return result;
 }
 
-void printint(int num)
-{
+void printint(int num) {
     char buf[16];
     int i = 0;
 
@@ -176,16 +164,14 @@ void printint(int num)
 
 // Keyboard
 
-char keyboard_map[128] =
-{
+char keyboard_map[128] = {
 0,27,'1','2','3','4','5','6','7','8','9','0','-','=',8,9,
 'q','w','e','r','t','y','u','i','o','p','[',']','\n',0,'a','s',
 'd','f','g','h','j','k','l',';',39,'`',0,'\\','z','x','c','v',
 'b','n','m',',','.','/',0,'*',0,' ',0
 };
 
-char get_key()
-{
+char get_key() {
     if (!(inb(0x64) & 1))
         return 0;
 
@@ -204,8 +190,7 @@ char get_key()
 char cmd_buffer[CMD_BUFFER];
 int cmd_index = 0;
 
-bool strcmp(const char* a, const char* b)
-{
+bool strcmp(const char* a, const char* b) {
     int i = 0;
 
     while (a[i] && b[i])
@@ -218,19 +203,61 @@ bool strcmp(const char* a, const char* b)
     return a[i] == b[i];
 }
 
+// Time & Date
+
+#define CMOS_ADDRESS 0x70
+#define CMOS_DATA    0x71
+
+uint8_t get_update_in_progress_flag() {
+    outb(CMOS_ADDRESS, 0x0A);
+    return (inb(CMOS_DATA) & 0x80);
+}
+
+uint8_t get_rtc_register(int reg) {
+    outb(CMOS_ADDRESS, reg);
+    return inb(CMOS_DATA);
+}
+
+void print_time() {
+    while (get_update_in_progress_flag());
+
+    uint8_t second = get_rtc_register(0x00);
+    uint8_t minute = get_rtc_register(0x02);
+    uint8_t hour   = get_rtc_register(0x04);
+    uint8_t day    = get_rtc_register(0x07);
+    uint8_t month  = get_rtc_register(0x08);
+    uint8_t year   = get_rtc_register(0x09);
+
+    second = (second & 0x0F) + ((second / 16) * 10);
+    minute = (minute & 0x0F) + ((minute / 16) * 10);
+    hour   = ((hour & 0x0F) + (((hour & 0x70) / 16) * 10)) | (hour & 0x80);
+    day    = (day & 0x0F) + ((day / 16) * 10);
+    month  = (month & 0x0F) + ((month / 16) * 10);
+    year   = (year & 0x0F) + ((year / 16) * 10);
+
+    print("Current Time: ");
+    printint(hour);   putchar(':');
+    printint(minute); putchar(':');
+    printint(second); print(" UTC");
+    print("  Date: ");
+    printint(day);    putchar('/');
+    printint(month);  putchar('/');
+    print("20"); printint(year); 
+    println("");
+}
+
 // Command logic
 
-void run_command()
-{
+void run_command() {
     putchar('\n');
 
-    if (strcmp(cmd_buffer, "help"))
-    {
+    if (strcmp(cmd_buffer, "help")) {
         println("Commands:");
         println("help :: This page!");
         println("about :: OS information");
         println("calc :: Simple calculator");
         println("clear :: Clears the screen");
+        println("wordle :: Plays a game of Wordle");
         println(" ");
         println("test read :: Reads test file");
         println("test view :: Simple FEX");
@@ -238,37 +265,38 @@ void run_command()
         println("reboot :: Reboots system");
         println("shutdown :: Shuts down system");
     }
-    else if (strcmp(cmd_buffer, "clear"))
-    {
+    else if (strcmp(cmd_buffer, "clear")) {
         clear_screen();
     }
-    else if (strcmp(cmd_buffer, "about"))
-    {
+    else if (strcmp(cmd_buffer, "about")) {
         println("Molecular Multiverse Services OS: developed by the realiodinemacer with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
-    else if (strcmp(cmd_buffer, "test read")) 
-    {
+    else if (strcmp(cmd_buffer, "test read")) {
         char read_buffer[512];
         if (vfs_read_file("0:\\test.ini", read_buffer)) {
             println(read_buffer);
-        } else {
+        } 
+        else {
             println("Error: 0:\\test.ini not found.");
         }
     }
-    else if (strcmp(cmd_buffer, "test view"))
-    {
+    else if (strcmp(cmd_buffer, "test view")) {
         vfs_list_files();
     }
-    else if (strcmp(cmd_buffer, "calc"))
-    {
+    else if (strcmp(cmd_buffer, "time")) {
+        print_time();
+    }
+    else if (strcmp(cmd_buffer, "calc")) {
         // clear_screen();
         run_calc();
     }
+    else if (strcmp(cmd_buffer, "wordle")) {
+        run_wordle();
+    }
     else if (strcmp(cmd_buffer, "shutdown")) shutdown();
     else if (strcmp(cmd_buffer, "reboot")) reboot();
-    else
-    {
+    else {
         println("Unknown command");
     }
 
@@ -283,8 +311,7 @@ void run_command()
 
 // Main loop
 
-void kernel_main()
-{
+void kernel_main() {
     clear_screen();
 
     vfs_init();
@@ -315,33 +342,29 @@ void kernel_main()
     handle_login();
 
     println("Welcome to MMS-OS!");
+    print_time();
     println("Type 'help' for commands");
     print("shell > ");
 
-    while (1)
-    {
+    while (1) {
         char key = get_key();
 
-        if (!key)
-        {
+        if (!key) {
             continue;
         }
-        if (key == '\n')
-        {
+        if (key == '\n') {
             run_command();
         }
-        else if (key == 8)
-        {
-            if (cmd_index > 0)
-            {
+        else if (key == 8) {
+            if (cmd_index > 0) {
                 cmd_index--;
+                cmd_buffer[cmd_index] = '\0';
                 cursorX--;
                 putchar(' ');
                 cursorX--;
             }
         }
-        else
-        {
+        else {
             putchar(key);
             cmd_buffer[cmd_index] = key;
             cmd_index++;
