@@ -12,7 +12,7 @@ This project is the C cousin in MMS-COSMOS (private project), which should allow
 ## Use/Build instructions
 **Use from release ISO:** (iso/output)
 - Load ISO in your system of choice. It should work fine out the box.
-- This OS has been successfully tested in VMware and Qemu. I cannot guarantee its success in another VM or on actual hardware.
+- This OS has been successfully tested in VMware and Qemu. I cannot guarantee its success in another VM or on, God forbid you try, actual hardware.
 
 **Build from source:**
 - Requires a Linux system or Windows Subsystem for Linux
