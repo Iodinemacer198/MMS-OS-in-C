@@ -1,9 +1,19 @@
 #include <stdint.h>
 #include <stdbool.h>
-#include "fs.h"
+//#include "fs.h"
 #include "calc.h"
 #include "login.h"
 #include "wordle.h"
+#include "ff.h"        
+#include "diskio.h" 
+#include "io.h"    
+
+FATFS fs;               
+FIL fil;                
+FRESULT fr;
+
+FIL fil2;
+FRESULT f2r;
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -98,21 +108,16 @@ void clear_screen() {
     cursorY = 0;
 }
 
+char* strchr(const char* s, int c) {
+    while (*s != (char)c) {
+        if (!*s++) {
+            return 0;
+        }
+    }
+    return (char*)s;
+}
+
 // IO
-
-static inline uint8_t inb(uint16_t port) {
-    uint8_t result;
-    __asm__ volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
-    return result;
-}
-
-static inline void outb(uint16_t port, uint8_t value) {
-    __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port));
-}
-
-static inline void outw(uint16_t port, uint16_t value) {
-    __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
-}
 
 void reboot() {
     while (inb(0x64) & 0x02);
@@ -275,15 +280,50 @@ void run_command() {
     }
     else if (strcmp(cmd_buffer, "test read")) {
         char read_buffer[512];
-        if (vfs_read_file("0:\\test.ini", read_buffer)) {
+        UINT br; /* Bytes read */
+
+        // FatFs uses "0:test.ini" format
+        fr = f_open(&fil, "0:/System/test.ini", FA_READ);
+        
+        if (fr == FR_OK) {
+            // Read up to 511 bytes (leave 1 for null terminator)
+            f_read(&fil, read_buffer, 511, &br);
+            read_buffer[br] = '\0'; // Null terminate the string
+            
+            println("--- File Content ---");
             println(read_buffer);
-        } 
-        else {
-            println("Error: 0:\\test.ini not found.");
+            println("--------------------");
+            
+            f_close(&fil);
+        } else {
+            print("Error: Could not open test.ini. Code: ");
+            printint((int)fr);
+            println("");
         }
     }
     else if (strcmp(cmd_buffer, "test view")) {
-        vfs_list_files();
+        DIR dir;
+        FILINFO fno;
+
+        fr = f_findfirst(&dir, &fno, "0:", "*"); // Start searching in root
+        
+        if (fr == FR_OK && fno.fname[0]) {
+            while (fr == FR_OK && fno.fname[0]) {
+                // Check if it's a directory or a file
+                if (fno.fattrib & AM_DIR) print("<DIR> ");
+                else print("      ");
+                
+                print(fno.fname);
+                print("  -  ");
+                printint(fno.fsize);
+                println(" bytes");
+                
+                fr = f_findnext(&dir, &fno); // Find next entry
+            }
+            f_closedir(&dir);
+        } else {
+            println("Directory is empty or disk error.");
+        }
     }
     else if (strcmp(cmd_buffer, "time")) {
         print_time();
@@ -315,7 +355,57 @@ void run_command() {
 void kernel_main() {
     clear_screen();
 
-    vfs_init();
+    FRESULT res;
+
+    println("Checkpoint 1: Mounting...");
+
+    fr = f_mount(&fs, "0:", 0); 
+    if (fr != FR_OK) {
+        print("FS Error: Could not mount partition. Code: ");
+        printint((int)fr);
+        println("");
+    } else {
+        println("File System: Mounted successfully.");
+    }
+
+    println("Checkpoint 2: Mkdir...");
+
+    res = f_mkdir("0:/System");
+    if (res != FR_OK && res != FR_EXIST) {
+        print("Error creating system directory. Code: ");
+        printint((int)res);
+        println("");
+    }
+
+    res = f_mkdir("0:/Data");
+    if (res != FR_OK && res != FR_EXIST) {
+        print("Error creating Data directory. Code: ");
+        printint((int)res);
+        println("");
+    }
+
+    FILINFO fno;
+    FRESULT res2;
+
+    res2 = f_stat("0:/System/test.ini", &fno);
+
+    println("Checkpoint 3: Stat...");
+
+    if (res2 == FR_NO_FILE) {
+        println("test.ini not found. Creating default...");
+        
+        res2 = f_open(&fil, "0:/System/test.ini", FA_WRITE | FA_CREATE_ALWAYS);
+        if (res2 == FR_OK) {
+            UINT bw;
+            f_write(&fil, "sup twih :wilted_rose:", 22, &bw);
+            f_close(&fil);
+            println("Done.");
+        }
+    } else if (res == FR_OK) {
+        
+    } else {
+        println("Disk error occurred.");
+    }
 
     println("                  *                       ");
     println("                   *                      ");
