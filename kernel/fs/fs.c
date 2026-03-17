@@ -52,7 +52,7 @@ void vfs_init() {
         }
         ata_write_sector(1, (uint8_t*)&current_dir);
         
-        vfs_write_file("0:\\test.ini", "Hello, curious user!");
+        vfs_write_file("0:\\test.txt", "Hello, curious user!");
     } else {
         println("Disk mounted successfully.");
     }

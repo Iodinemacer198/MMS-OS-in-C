@@ -98,8 +98,7 @@ void clear_screen() {
     cursorY = 0;
 }
 
-void path_prepend(char* path)
-{
+void path_prepend(char* path) {
     // Find length of current string
     int len = 0;
     while (path[len] != '\0') len++;
@@ -356,6 +355,82 @@ void run_command() {
     }
     else if (strcmp(cmd_buffer, "wordle")) {
         run_wordle();
+    }
+    else if (strcmp(cmd_buffer, "mkf")) {
+        print("File name: ");
+        char path2[64] = "";
+        int path2_index = 0;
+        bool running2 = true;
+        while (running2) {
+            char key = get_key();
+
+            if (!key) {
+                continue;
+            }
+            if (key == '\n') {
+                path_prepend(path2);
+                running2 = false;
+            }
+            else if (key == 8) {
+                if (path2_index > 0) {
+                    path2_index--;
+                    path2[path2_index] = '\0';
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else {
+                putchar(key);
+                path2[path2_index] = key;
+                path2_index++;
+            }
+        }
+        char temp[512] = "";
+        if (vfs_read_file(path2, temp)) {
+            println("A file with this name already exists!");
+        } else {
+            if (vfs_write_file(path2, "")) {
+                putchar('\n');
+                print(path2);
+                println(" successfully created!");
+            } else {
+                println("Error: Could not create file.");
+            }
+        }
+        char path3[64] = "";
+        int path3_index = 0;
+        print("Write contents: ");
+        bool running3 = true;
+        while (running3) {
+            char key = get_key();
+
+            if (!key) {
+                continue;
+            }
+            if (key == '\n') {
+                running3 = false;
+            }
+            else if (key == 8) {
+                if (path3_index > 0) {
+                    path3_index--;
+                    path3[path3_index] = '\0';
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else {
+                putchar(key);
+                path3[path3_index] = key;
+                path3_index++;
+            }
+        }
+        vfs_write_file(path2, path3);
+        putchar('\n');
+        print("Contents successfully written to ");
+        print(path2);
+        putchar('\n');
     }
     else if (strcmp(cmd_buffer, "shutdown")) shutdown();
     else if (strcmp(cmd_buffer, "reboot")) reboot();
