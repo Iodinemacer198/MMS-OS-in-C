@@ -111,11 +111,14 @@ void vfs_list_files() {
     bool empty = true;
     for(int i = 0; i < VFS_MAX_FILES; i++) {
         if(current_dir.files[i].exists) {
-            print(current_dir.files[i].path);
-            print(" (");
-            printint(current_dir.files[i].size);
-            println(" bytes)");
-            empty = false;
+            if (strcmp(current_dir.files[i].path, "0:\\password.ini") || strcmp(current_dir.files[i].path, "0:\\username.ini")) {}
+            else {
+                print(current_dir.files[i].path);
+                print(" (");
+                printint(current_dir.files[i].size);
+                println(" bytes)");
+                empty = false;
+            }
         }
     }
     if(empty) println("No files found.");

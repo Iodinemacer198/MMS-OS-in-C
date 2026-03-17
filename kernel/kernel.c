@@ -98,6 +98,23 @@ void clear_screen() {
     cursorY = 0;
 }
 
+void path_prepend(char* path)
+{
+    // Find length of current string
+    int len = 0;
+    while (path[len] != '\0') len++;
+
+    // Shift existing string forward by 4 chars
+    for (int i = len; i >= 0; i--) {
+        path[i + 3] = path[i]; // include null terminator
+    }
+
+    // Add "0://"
+    path[0] = '0';
+    path[1] = ':';
+    path[2] = '\\';
+}
+
 // IO
 
 static inline uint8_t inb(uint16_t port) {
@@ -260,8 +277,8 @@ void run_command() {
         println("time :: Display current time and date");
         println("wordle :: Plays a game of Wordle");
         println(" ");
-        println("test read :: Reads test file");
-        println("test view :: Simple FEX");
+        println("read :: Reads a file");
+        println("ls :: Simple FEX");
         println(" ");
         println("reboot :: Reboots system");
         println("shutdown :: Shuts down system");
@@ -273,16 +290,61 @@ void run_command() {
         println("Molecular Multiverse Services OS: developed by the the MMS team with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
-    else if (strcmp(cmd_buffer, "test read")) {
+    else if (strcmp(cmd_buffer, "read")) {
+        print("File path: ");
+        char path[64] = "";
+        int path_index = 0;
+        bool running = true;
+        while (running) {
+            char key = get_key();
+
+            if (!key) {
+                continue;
+            }
+            if (key == '\n') {
+                path_prepend(path);
+                running = false;
+            }
+            else if (key == 8) {
+                if (path_index > 0) {
+                    path_index--;
+                    path[path_index] = '\0';
+                    cursorX--;
+                    putchar(' ');
+                    cursorX--;
+                }
+            }
+            else {
+                putchar(key);
+                path[path_index] = key;
+                path_index++;
+            }
+        }
         char read_buffer[512];
-        if (vfs_read_file("0:\\test.ini", read_buffer)) {
+        if (strcmp(path, "0:\\password.ini") || strcmp(path, "0:\\username.ini")) {
+            putchar('\n');
+            print("Error: ");
+            print(path);
+            print(" not found.");
+            putchar('\n');
+        }
+        else if (vfs_read_file(path, read_buffer)) {
+            putchar('\n');
             println(read_buffer);
         } 
         else {
-            println("Error: 0:\\test.ini not found.");
+            putchar('\n');
+            print("Error: ");
+            print(path);
+            print(" not found.");
+            putchar('\n');
         }
+        for (int i = 0; i < 64; i++) {
+            path[i] = 0;
+        }
+        path_index = 0;
     }
-    else if (strcmp(cmd_buffer, "test view")) {
+    else if (strcmp(cmd_buffer, "ls")) {
         vfs_list_files();
     }
     else if (strcmp(cmd_buffer, "time")) {
