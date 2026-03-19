@@ -53,6 +53,7 @@ void vfs_init() {
         ata_write_sector(1, (uint8_t*)&current_dir);
         
         vfs_write_file("0:\\test.txt", "Hello, curious user!");
+        vfs_write_file("0:\\ode.md", "370 400\n370 400\n392 400\n440 400\n440 400\n392 400\n370 400\n330 400\n294 400\n294 400\n330 400\n370 400\n370 600\n330 200\n330 800");
     } else {
         println("Disk mounted successfully.");
     }
@@ -138,4 +139,41 @@ bool vfs_delete_file(const char* path) {
         }
     }
     return false; 
+}
+
+bool vfs_read_file_line(const char* path, char* line_out) {
+    static char file_buffer[512];
+    static int index = 0;
+    static bool loaded = false;
+
+    if (!loaded) {
+        for (int i = 0; i < VFS_MAX_FILES; i++) {
+            if (current_dir.files[i].exists && strcmp(current_dir.files[i].path, path)) {
+                ata_read_sector(current_dir.files[i].lba, (uint8_t*)file_buffer);
+                file_buffer[current_dir.files[i].size] = '\0';
+                index = 0;
+                loaded = true;
+                break;
+            }
+        }
+
+        if (!loaded) return false; 
+    }
+
+    if (file_buffer[index] == '\0') {
+        loaded = false; 
+        return false;
+    }
+
+    int i = 0;
+    while (file_buffer[index] != '\n' && file_buffer[index] != '\0') {
+        line_out[i++] = file_buffer[index++];
+    }
+
+    if (file_buffer[index] == '\n') {
+        index++;
+    }
+
+    line_out[i] = '\0';
+    return true;
 }

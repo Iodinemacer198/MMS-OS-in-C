@@ -188,6 +188,78 @@ void printint(int num) {
         putchar(buf[i]);
 }
 
+// Sound
+
+void play_sound(uint32_t frequency) {
+    uint32_t divisor = 1193180 / frequency;
+
+    outb(0x43, 0xB6);
+
+    outb(0x42, (uint8_t)(divisor & 0xFF));
+    outb(0x42, (uint8_t)((divisor >> 8) & 0xFF));
+
+    uint8_t tmp = inb(0x61);
+    if (tmp != (tmp | 3)) {
+        outb(0x61, tmp | 3);
+    }
+}
+
+void stop_sound() {
+    uint8_t tmp = inb(0x61) & 0xFC;
+    outb(0x61, tmp);
+}
+
+void beep(uint32_t frequency, uint32_t count) {
+    play_sound(frequency); 
+    sleep((count*10));       
+    stop_sound();
+}
+
+void musparse_line(const char* line, int* freq, int* duration) {
+    char freq_buf[16];
+    char dur_buf[16];
+
+    int i = 0, j = 0;
+
+    while (line[i] != ' ' && line[i] != '\0') {
+        freq_buf[j++] = line[i++];
+    }
+    freq_buf[j] = '\0';
+
+    if (line[i] == ' ') i++;
+
+    j = 0;
+    while (line[i] != '\0') {
+        dur_buf[j++] = line[i++];
+    }
+    dur_buf[j] = '\0';
+
+    *freq = atoi(freq_buf);
+    *duration = atoi(dur_buf);
+}
+
+void play_music(const char* path) {
+    char line[128];
+
+    print("Now playing ");
+    print(path);
+    putchar('\n');
+
+    while (vfs_read_file_line(path, line)) {
+        int freq = 0;
+        int duration = 0;
+
+        musparse_line(line, &freq, &duration);
+
+        if (freq > 0 && duration > 0) {
+            play_sound(freq);
+            sleep(duration*15);
+            stop_sound();
+            sleep(550); 
+        }
+    }
+}
+
 // Keyboard
 
 char keyboard_map[128] = {
@@ -282,6 +354,7 @@ void run_command() {
         println("help : This page!                     |  about : OS information");
         println("calc : Simple calculator              |  clear : Clears the screen");
         println("time : Display current time and date  |  wordle : Plays a game of Wordle");
+        println("music : Plays a test music file       |");
         println("                                      |");
         println("read : Reads a file                   |  ls : Simple FEX");
         println("mkr : Make a new text file            |  rmf : Delete a file");
@@ -302,6 +375,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "mkf", 3)) mkf();
     else if (strscmp(cmd_buffer, "shutdown", 8)) shutdown();
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
+    else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\ode.md");
     else println("Unknown command");
 
     println("");
@@ -344,6 +418,8 @@ void kernel_main() {
     println("                           **             ");
 
     handle_login();
+    beep(660, 500);
+    beep(590, 500);
 
     println("Welcome to MMS-OS!");
     print_time();
