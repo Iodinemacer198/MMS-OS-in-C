@@ -22,7 +22,7 @@ void strcpy(char* dest, const char* src) {
     dest[i] = '\0';
 }
 
-#define VFS_MAX_FILES 10
+#define VFS_MAX_FILES 12
 #define SECTOR_SIZE 512
 #define FS_MAGIC 0x4D4D5346 
 
@@ -176,4 +176,16 @@ bool vfs_read_file_line(const char* path, char* line_out) {
 
     line_out[i] = '\0';
     return true;
+}
+
+int vfs_file_count() {
+    int count = 0;
+
+    for (int i = 0; i < VFS_MAX_FILES; i++) {
+        if (current_dir.files[i].exists) {
+            count++;
+        }
+    }
+
+    return count;
 }

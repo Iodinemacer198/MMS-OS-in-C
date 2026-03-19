@@ -265,8 +265,8 @@ void play_music(const char* path) {
 char keyboard_map[128] = {
 0,27,'1','2','3','4','5','6','7','8','9','0','-','=',8,9,
 'q','w','e','r','t','y','u','i','o','p','[',']','\n',0,'a','s',
-'d','f','g','h','j','k','l',';',39,'`',0,'\\','z','x','c','v',
-'b','n','m',',','.','/',0,'*',0,' ',0
+'d','f','g','h','j','k','l',':',39,'`',0,'\\','z','x','c','v',
+'b','n','m',',','.','/',42,'*',54,' ',0
 };
 
 char get_key() {
@@ -357,7 +357,7 @@ void run_command() {
         println("music : Plays a test music file       |");
         println("                                      |");
         println("read : Reads a file                   |  ls : Simple FEX");
-        println("mkr : Make a new text file            |  rmf : Delete a file");
+        println("mkf : Make a new text file            |  rmf : Delete a file");
         println("                                      |");
         println("reboot : Reboots system               |  shutdown : Shuts down system");
     }

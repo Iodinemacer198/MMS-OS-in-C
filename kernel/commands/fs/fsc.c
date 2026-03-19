@@ -13,10 +13,16 @@ extern void path_prepend(char* path);
 extern void putchar(char c);
 extern char get_key();
 extern bool vfs_delete_file(const char* path);
+extern int vfs_file_count();
 
 extern int cursorX;
 
 void mkf() {
+    int fileCount = vfs_file_count();
+    if (fileCount >= 12) {
+        println("There are too many files on this system! Use 'rmf' to delete some!"); 
+        return;
+    }
     print("File name: ");
     char path2[64] = "";
     int path2_index = 0;
@@ -60,7 +66,7 @@ void mkf() {
     }
     char path3[64] = "";
     int path3_index = 0;
-    print("Write contents: ");
+    println("Write contents (type :s and press enter to save): ");
     bool running3 = true;
     while (running3) {
         char key = get_key();
@@ -68,7 +74,9 @@ void mkf() {
         if (!key) {
             continue;
         }
-        if (key == '\n') {
+        if (key == '\n' && path3[path3_index-1] == 's' && path3[path3_index-2] == ':') {
+            path3[path3_index-1] = '\0';
+            path3[path3_index-2] = '\0';
             running3 = false;
         }
         else if (key == 8) {
@@ -178,7 +186,7 @@ void rmf() {
             path2_index++;
         }
     }
-    if (!vfs_delete_file(path2)) {
+    if (!vfs_delete_file(path2) || strcmp(path2, "0:\\password.ini") || strcmp(path2, "0:\\username.ini")) {
         putchar('\n');
         println("This file doesn't exit!");
     } else {
