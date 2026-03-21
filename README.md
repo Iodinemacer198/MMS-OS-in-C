@@ -6,7 +6,7 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Calculator
 - Wordle game
 - Basic file system with commands
-- Basic Tiny CC integration
+- Basic Tiny CC integration (close enough to C, you can figure out the syntax yourself...)
 - Login system
 
 ## Use/Build instructions
