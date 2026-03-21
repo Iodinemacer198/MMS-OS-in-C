@@ -266,9 +266,18 @@ void play_music(const char* path) {
 char keyboard_map[128] = {
 0,27,'1','2','3','4','5','6','7','8','9','0','-','=',8,9,
 'q','w','e','r','t','y','u','i','o','p','[',']','\n',0,'a','s',
-'d','f','g','h','j','k','l',':',39,'`',0,'\\','z','x','c','v',
+'d','f','g','h','j','k','l',';','\'','`',0,'\\','z','x','c','v',
 'b','n','m',',','.','/',42,'*',54,' ',0
 };
+
+char keyboard_map_shift[128] = {
+0,27,'!','@','#','$','%','^','&','*','(',')','_','+',8,9,
+'Q','W','E','R','T','Y','U','I','O','P','{','}','\n',0,'A','S',
+'D','F','G','H','J','K','L',':', '"','~',0,'|','Z','X','C','V',
+'B','N','M','<','>','?',42,'*',54,' ',0
+};
+
+bool shift_pressed = false;
 
 char get_key() {
     if (!(inb(0x64) & 1))
@@ -276,13 +285,34 @@ char get_key() {
 
     uint8_t scancode = inb(0x60);
 
+    if (scancode == 0x2A) {
+        shift_pressed = true;
+        return 0;
+    }
+    if (scancode == 0xAA) {
+        shift_pressed = false;
+        return 0;
+    }
+
+    if (scancode == 0x36) {
+        shift_pressed = true;
+        return 0;
+    }
+    if (scancode == 0xB6) {
+        shift_pressed = false;
+        return 0;
+    }
+
     if (scancode & 0x80)
         return 0;
 
     if (scancode > 57)
         return 0;
 
-    return keyboard_map[scancode];
+    if (shift_pressed)
+        return keyboard_map_shift[scancode];
+    else
+        return keyboard_map[scancode];
 }
 
 #define CMD_BUFFER 128
@@ -356,7 +386,9 @@ void run_command() {
         println("calc : Simple calculator              |  clear : Clears the screen");
         println("time : Display current time and date  |  wordle : Plays a game of Wordle");
         println("music : Plays a test music file       |  cc : Build a Tiny C source file");
-        println("                                      |  cexec : Run a compiled Tiny C file");
+        println("                                      |");
+        println("cc : Build a C source file            |  cexec : Run a compiled C file");
+        println("                                      |");
         println("read : Reads a file                   |  ls : Simple FEX");
         println("mkf : Make a new text file            |  rmf : Delete a file");
         println("                                      |");

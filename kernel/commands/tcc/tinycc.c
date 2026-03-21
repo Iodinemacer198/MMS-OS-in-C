@@ -933,6 +933,7 @@ void run_tcc_exec() {
     }
 
     if (tiny_execute_program(program, &exit_code)) {
+        putchar('\n');
         print("Program exited with code ");
         printint(exit_code);
         putchar('\n');

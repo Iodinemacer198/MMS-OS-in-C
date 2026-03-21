@@ -54,7 +54,9 @@ void mkf() {
     }
     char temp[512] = "";
     if (vfs_read_file(path2, temp)) {
+        putchar('\n');
         println("A file with this name already exists!");
+        return;
     } else {
         if (vfs_write_file(path2, "")) {
             putchar('\n');
