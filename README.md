@@ -6,7 +6,7 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Calculator
 - Wordle game
 - Basic file system with commands
-- Tiny C bytecode compiler and runtime commands (`cc` and `cexec`)
+- Basic Tiny CC integration
 - Login system
 
 ## Use/Build instructions
@@ -33,7 +33,7 @@ For any questions, suggestions, issues, etc, feel free to reach out to @thereali
 ## Disclaimers
 MMS-OS is a VERY work-in-progress project. Lag, bugs, etc are to be expected. As more of a hobby project, also expect slow progress and a lack of functionality. This project is just for fun, don't expect much :)
 
-Some AI was used in the making of this project, especially with parts of the initial setup. I really don't know too much of C, and this is the easiest way for me to learn the language while also making progress. Outside of the initial setup and some other miscellaneous components, it is however entirely my work. If you doubt that, check some of the scripts, there's no way anyone other than a stupid human could make some of those...
+Some AI was used in the making of this project, especially with parts of the initial setup. I really don't know too much of C, and this is the easiest way for me to learn the language while also making progress. Outside of the initial setup and some components that I needed help with, it is however my work. If you doubt that, check some of the scripts, there's no way anyone other than a stupid human could make some of those...
 
 
 
