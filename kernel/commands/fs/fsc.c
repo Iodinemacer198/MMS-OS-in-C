@@ -2,11 +2,8 @@
 #include <stdbool.h>
 #include "fsc.h"
 
-extern int strlen(const char* str);
 extern void print(const char* str);
 extern void println(const char* str);
-extern void printint(int num);
-extern bool strcmp(const char* a, const char* b);
 extern bool vfs_write_file(const char* path, const char* data);
 extern bool vfs_read_file(const char* path, char* buffer_out);
 extern void path_prepend(char* path);
@@ -14,187 +11,225 @@ extern void putchar(char c);
 extern char get_key();
 extern bool vfs_delete_file(const char* path);
 extern int vfs_file_count();
+extern bool vfs_make_dir(const char* path);
+extern bool vfs_remove_dir(const char* path);
+extern bool vfs_change_dir(const char* path);
+extern void vfs_get_cwd(char* out);
+extern void vfs_list_current_dir();
 
 extern int cursorX;
 
-void mkf() {
-    int fileCount = vfs_file_count();
-    if (fileCount >= 12) {
-        println("There are too many files on this system! Use 'rmf' to delete some!"); 
-        return;
+static bool contains_sep(const char* str) {
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '\\' || str[i] == '/') return true;
     }
-    print("File name: ");
-    char path2[64] = "";
-    int path2_index = 0;
-    bool running2 = true;
-    while (running2) {
-        char key = get_key();
+    return false;
+}
 
-        if (!key) {
-            continue;
-        }
+static void read_input(char* out, int max_len) {
+    int idx = 0;
+    bool running = true;
+
+    while (running) {
+        char key = get_key();
+        if (!key) continue;
+
         if (key == '\n') {
-            path_prepend(path2);
-            running2 = false;
+            running = false;
         }
         else if (key == 8) {
-            if (path2_index > 0) {
-                path2_index--;
-                path2[path2_index] = '\0';
+            if (idx > 0) {
+                idx--;
+                out[idx] = '\0';
                 cursorX--;
                 putchar(' ');
                 cursorX--;
             }
         }
-        else {
+        else if (idx < (max_len - 1)) {
             putchar(key);
-            path2[path2_index] = key;
-            path2_index++;
+            out[idx++] = key;
+            out[idx] = '\0';
         }
     }
+}
+
+void ls() {
+    vfs_list_current_dir();
+}
+
+void pwd() {
+    char cwd[64];
+    vfs_get_cwd(cwd);
+    println(cwd);
+}
+
+void cd() {
+    print("Directory: ");
+    char path[64] = "";
+    read_input(path, 64);
+
+    if (vfs_change_dir(path)) {
+        putchar('\n');
+    } else {
+        putchar('\n');
+        println("Could not change directory.");
+    }
+}
+
+void mkdir_cmd() {
+    print("Directory name: ");
+    char name[64] = "";
+    read_input(name, 64);
+
+    if (contains_sep(name)) {
+        putchar('\n');
+        println("Use a single directory name (no path separators).");
+        return;
+    }
+
+    path_prepend(name);
+    if (vfs_make_dir(name)) {
+        putchar('\n');
+        println("Directory created.");
+    } else {
+        putchar('\n');
+        println("Could not create directory.");
+    }
+}
+
+void rmdir_cmd() {
+    print("Directory name: ");
+    char name[64] = "";
+    read_input(name, 64);
+
+    if (contains_sep(name)) {
+        putchar('\n');
+        println("Use a single directory name (no path separators).");
+        return;
+    }
+
+    path_prepend(name);
+    if (vfs_remove_dir(name)) {
+        putchar('\n');
+        println("Directory removed.");
+    } else {
+        putchar('\n');
+        println("Directory not empty, not found, or protected.");
+    }
+}
+
+void mkf() {
+    int fileCount = vfs_file_count();
+    if (fileCount >= 56) {
+        println("Directory table is full! Use 'rmf' to delete some files!");
+        return;
+    }
+
+    print("File name: ");
+    char path2[64] = "";
+    read_input(path2, 64);
+
+    if (contains_sep(path2)) {
+        putchar('\n');
+        println("Use a single file name (no path separators).");
+        return;
+    }
+
+    path_prepend(path2);
+
     char temp[512] = "";
     if (vfs_read_file(path2, temp)) {
         putchar('\n');
         println("A file with this name already exists!");
         return;
-    } else {
-        if (vfs_write_file(path2, "")) {
-            putchar('\n');
-            print(path2);
-            println(" successfully created!");
-        } else {
-            println("Error: Could not create file.");
-        }
     }
-    char path3[64] = "";
-    int path3_index = 0;
+
+    if (!vfs_write_file(path2, "")) {
+        putchar('\n');
+        println("Error: Could not create file.");
+        return;
+    }
+
+    putchar('\n');
     println("Write contents (type :s and press enter to save): ");
-    bool running3 = true;
-    while (running3) {
-        char key = get_key();
 
-        if (!key) {
-            continue;
-        }
-        if (key == '\n' && path3[path3_index-1] == 's' && path3[path3_index-2] == ':') {
-            path3[path3_index-1] = '\0';
-            path3[path3_index-2] = '\0';
-            running3 = false;
-        }
-        else if (key == 8) {
-            if (path3_index > 0) {
-                path3_index--;
-                path3[path3_index] = '\0';
-                cursorX--;
-                putchar(' ');
-                cursorX--;
-            }
-        }
-        else {
-            putchar(key);
-            path3[path3_index] = key;
-            path3_index++;
-        }
-    }
-    vfs_write_file(path2, path3);
-    putchar('\n');
-    print("Contents successfully written to ");
-    print(path2);
-    putchar('\n');
-}
-
-void read() {
-    print("File path: ");
-    char path[64] = "";
-    int path_index = 0;
+    char data[512] = "";
+    int idx = 0;
     bool running = true;
     while (running) {
         char key = get_key();
+        if (!key) continue;
 
-        if (!key) {
-            continue;
-        }
-        if (key == '\n') {
-            path_prepend(path);
+        if (key == '\n' && idx >= 2 && data[idx - 1] == 's' && data[idx - 2] == ':') {
+            data[idx - 2] = '\0';
             running = false;
         }
         else if (key == 8) {
-            if (path_index > 0) {
-                path_index--;
-                path[path_index] = '\0';
+            if (idx > 0) {
+                idx--;
+                data[idx] = '\0';
                 cursorX--;
                 putchar(' ');
                 cursorX--;
             }
         }
-        else {
+        else if (idx < 511) {
             putchar(key);
-            path[path_index] = key;
-            path_index++;
+            data[idx++] = key;
+            data[idx] = '\0';
         }
     }
-    char read_buffer[512];
-    if (strcmp(path, "0:\\password.ini") || strcmp(path, "0:\\username.ini")) {
+
+    vfs_write_file(path2, data);
+    putchar('\n');
+    println("File saved.");
+}
+
+void read() {
+    print("File name: ");
+    char path[64] = "";
+    read_input(path, 64);
+
+    if (contains_sep(path)) {
         putchar('\n');
-        print("Error: ");
-        print(path);
-        print(" not found.");
-        putchar('\n');
+        println("Use a single file name (no path separators).");
+        return;
     }
-    else if (vfs_read_file(path, read_buffer)) {
+
+    path_prepend(path);
+
+    char read_buffer[512];
+    if (vfs_read_file(path, read_buffer)) {
         putchar('\n');
         println(read_buffer);
-    } 
+    }
     else {
         putchar('\n');
         print("Error: ");
         print(path);
-        print(" not found.");
-        putchar('\n');
+        println(" not found.");
     }
-    for (int i = 0; i < 64; i++) {
-        path[i] = 0;
-    }
-    path_index = 0;
 }
 
 void rmf() {
     print("File name: ");
     char path2[64] = "";
-    int path2_index = 0;
-    bool running2 = true;
-    while (running2) {
-        char key = get_key();
+    read_input(path2, 64);
 
-        if (!key) {
-            continue;
-        }
-        if (key == '\n') {
-            path_prepend(path2);
-            running2 = false;
-        }
-        else if (key == 8) {
-            if (path2_index > 0) {
-                path2_index--;
-                path2[path2_index] = '\0';
-                cursorX--;
-                putchar(' ');
-                cursorX--;
-            }
-        }
-        else {
-            putchar(key);
-            path2[path2_index] = key;
-            path2_index++;
-        }
-    }
-    if (!vfs_delete_file(path2) || strcmp(path2, "0:\\password.ini") || strcmp(path2, "0:\\username.ini")) {
+    if (contains_sep(path2)) {
         putchar('\n');
-        println("This file doesn't exit!");
+        println("Use a single file name (no path separators).");
+        return;
+    }
+
+    path_prepend(path2);
+
+    if (!vfs_delete_file(path2)) {
+        putchar('\n');
+        println("File not found.");
     } else {
         putchar('\n');
-        print("Successfully deleted ");
-        print(path2);
-        putchar('\n');
+        println("File deleted.");
     }
 }
