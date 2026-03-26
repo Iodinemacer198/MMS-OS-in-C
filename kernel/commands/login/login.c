@@ -34,7 +34,7 @@ char username_buffer[20];
 char password_buffer[20];
 
 void handle_login() {
-    if (vfs_read_file("0:\\password.ini", password_buffer) && vfs_read_file("0:\\username.ini", username_buffer)) {
+    if (vfs_read_file("0:\\data\\password.ini", password_buffer) && vfs_read_file("0:\\data\\username.ini", username_buffer)) {
         print("Username: ");
         bool userrunning = true;
         while (userrunning) {
@@ -133,7 +133,7 @@ void handle_login() {
                 continue;
             }
             else if (key == '\n') {
-                vfs_write_file("0:\\username.ini", usin_buffer);
+                vfs_write_file("0:\\data\\username.ini", usin_buffer);
                 userrunning = false;
             }
             else if (key == 8) {
@@ -166,7 +166,7 @@ void handle_login() {
                 continue;
             }
             else if (key == '\n') {
-                vfs_write_file("0:\\password.ini", psin_buffer);
+                vfs_write_file("0:\\data\\password.ini", psin_buffer);
                 //println(psin_buffer);
                 passrunning = false;
             }

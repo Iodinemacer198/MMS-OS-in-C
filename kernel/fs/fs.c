@@ -49,6 +49,7 @@ static Superblock superblock;
 static uint16_t fat[MAX_CLUSTERS + 2];
 static DirEntry dir_table[MAX_DIR_ENTRIES];
 static uint8_t io_buffer[SECTOR_SIZE];
+static char cwd_path[64] = "0:\\";
 
 static const char* default_demo_source =
     "int main() {\n"
@@ -72,6 +73,19 @@ static void str_cpy(char* dest, const char* src) {
         i++;
     }
     dest[i] = '\0';
+}
+
+static bool str_starts_with(const char* str, const char* pref) {
+    int i = 0;
+    while (pref[i]) {
+        if (str[i] != pref[i]) return false;
+        i++;
+    }
+    return true;
+}
+
+static bool is_path_sep(char c) {
+    return c == '\\' || c == '/';
 }
 
 static void mem_zero(uint8_t* ptr, int len) {
@@ -105,14 +119,6 @@ static void fs_load_dirs() {
     }
 }
 
-static bool is_path_sep(char c) {
-    return c == '\\' || c == '/';
-}
-
-static bool is_protected_file(const char* full_path) {
-    return strcmp(full_path, "0:\\password.ini") || strcmp(full_path, "0:\\username.ini");
-}
-
 static int dir_find_child(uint16_t parent, const char* name) {
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
         if (is_used(&dir_table[i]) && dir_table[i].parent == parent && strcmp(dir_table[i].name, name)) {
@@ -136,33 +142,75 @@ static bool parse_component(const char* path, int* p, char* out) {
     if (!path[*p]) return false;
 
     while (path[*p] && !is_path_sep(path[*p])) {
-        if (idx < 23) {
-            out[idx++] = path[*p];
-        }
+        if (idx < 23) out[idx++] = path[*p];
         (*p)++;
     }
+
     out[idx] = '\0';
     return idx > 0;
 }
 
 static int path_start(const char* path) {
-    if (path[0] == '0' && path[1] == ':' && is_path_sep(path[2])) {
-        return 3;
-    }
+    if (path[0] == '0' && path[1] == ':' && is_path_sep(path[2])) return 3;
     return 0;
 }
 
-static bool resolve_parent_and_leaf(const char* path, uint16_t* parent_out, char* leaf_out, bool create_dirs) {
+static bool normalize_path(const char* path, char* out) {
+    char stack[8][24];
+    int count = 0;
+
+    if (!(path[0] == '0' && path[1] == ':' && is_path_sep(path[2]))) {
+        int cp = 3;
+        char part[24];
+        while (parse_component(cwd_path, &cp, part)) {
+            str_cpy(stack[count++], part);
+            if (count >= 8) break;
+        }
+    }
+
     int p = path_start(path);
+    char part[24];
+    while (parse_component(path, &p, part)) {
+        if (strcmp(part, ".")) {
+            continue;
+        }
+        if (strcmp(part, "..")) {
+            if (count > 0) count--;
+            continue;
+        }
+        if (count >= 8) return false;
+        str_cpy(stack[count++], part);
+    }
+
+    int o = 0;
+    out[o++] = '0';
+    out[o++] = ':';
+    out[o++] = '\\';
+
+    for (int i = 0; i < count; i++) {
+        for (int j = 0; stack[i][j] && o < 63; j++) out[o++] = stack[i][j];
+        if (i < count - 1 && o < 63) out[o++] = '\\';
+    }
+
+    out[o] = '\0';
+    return true;
+}
+
+static bool is_hidden_path(const char* absolute_path) {
+    return strcmp(absolute_path, "0:\\data") || str_starts_with(absolute_path, "0:\\data\\");
+}
+
+static bool resolve_parent_and_leaf(const char* absolute_path, uint16_t* parent_out, char* leaf_out, bool create_dirs) {
+    int p = path_start(absolute_path);
     uint16_t current = ROOT_DIR;
     char part[24];
     char next_part[24];
 
-    if (!parse_component(path, &p, part)) return false;
+    if (!parse_component(absolute_path, &p, part)) return false;
 
     while (1) {
         int saved = p;
-        bool has_next = parse_component(path, &saved, next_part);
+        bool has_next = parse_component(absolute_path, &saved, next_part);
 
         if (!has_next) {
             *parent_out = current;
@@ -192,20 +240,18 @@ static bool resolve_parent_and_leaf(const char* path, uint16_t* parent_out, char
     }
 }
 
-static int resolve_exact_path(const char* path) {
-    int p = path_start(path);
+static int resolve_exact_path(const char* absolute_path) {
+    int p = path_start(absolute_path);
     uint16_t current = ROOT_DIR;
     char part[24];
 
-    if (!parse_component(path, &p, part)) return -1;
+    if (!parse_component(absolute_path, &p, part)) return ROOT_DIR;
 
     while (1) {
         int child = dir_find_child(current, part);
         if (child < 0) return -1;
 
-        if (!parse_component(path, &p, part)) {
-            return child;
-        }
+        if (!parse_component(absolute_path, &p, part)) return child;
 
         if (!is_dir(&dir_table[child])) return -1;
         current = (uint16_t)child;
@@ -249,7 +295,7 @@ static uint16_t fat_alloc_chain(int clusters) {
     return first;
 }
 
-static bool write_file_data(uint16_t first_cluster, const char* data, int size) {
+static void write_file_data(uint16_t first_cluster, const char* data, int size) {
     uint16_t cur = first_cluster;
     int offset = 0;
 
@@ -264,8 +310,6 @@ static bool write_file_data(uint16_t first_cluster, const char* data, int size) 
         if (fat[cur] == FAT_EOC) break;
         cur = fat[cur];
     }
-
-    return true;
 }
 
 static bool read_file_data(uint16_t first_cluster, char* out, int size) {
@@ -288,6 +332,8 @@ static bool read_file_data(uint16_t first_cluster, char* out, int size) {
 
 static void vfs_seed_defaults() {
     char read_buffer[SECTOR_SIZE + 1];
+
+    vfs_make_dir("0:\\data");
 
     if (!vfs_read_file("0:\\test.txt", read_buffer)) {
         vfs_write_file("0:\\test.txt", "Hello, curious user!");
@@ -324,16 +370,82 @@ void vfs_init() {
         fs_load_dirs();
     }
 
+    str_cpy(cwd_path, "0:\\");
     vfs_seed_defaults();
+}
+
+bool vfs_make_dir(const char* path) {
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+
+    int existing = resolve_exact_path(abs);
+    if (existing >= 0) return (existing == ROOT_DIR) || is_dir(&dir_table[existing]);
+
+    uint16_t parent;
+    char leaf[24];
+    if (!resolve_parent_and_leaf(abs, &parent, leaf, true)) return false;
+
+    int idx = dir_alloc_entry();
+    if (idx < 0) return false;
+
+    str_cpy(dir_table[idx].name, leaf);
+    dir_table[idx].parent = parent;
+    dir_table[idx].first_cluster = FAT_FREE;
+    dir_table[idx].size = 0;
+    dir_table[idx].flags = 0x01 | 0x02;
+
+    fs_flush_dirs();
+    return true;
+}
+
+bool vfs_remove_dir(const char* path) {
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+    if (strcmp(abs, "0:\\") || is_hidden_path(abs)) return false;
+
+    int idx = resolve_exact_path(abs);
+    if (idx < 0 || idx == ROOT_DIR || !is_dir(&dir_table[idx])) return false;
+
+    for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
+        if (is_used(&dir_table[i]) && dir_table[i].parent == (uint16_t)idx) return false;
+    }
+
+    dir_table[idx].flags = 0;
+    dir_table[idx].name[0] = '\0';
+    dir_table[idx].size = 0;
+    dir_table[idx].first_cluster = FAT_FREE;
+    fs_flush_dirs();
+    return true;
+}
+
+bool vfs_change_dir(const char* path) {
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+    if (is_hidden_path(abs)) return false;
+
+    int idx = resolve_exact_path(abs);
+    if (idx == ROOT_DIR || (idx >= 0 && is_dir(&dir_table[idx]))) {
+        str_cpy(cwd_path, abs);
+        return true;
+    }
+
+    return false;
+}
+
+void vfs_get_cwd(char* out) {
+    str_cpy(out, cwd_path);
 }
 
 bool vfs_write_file(const char* path, const char* data) {
     int file_len = str_len(data);
     if (file_len > SECTOR_SIZE * 6) return false;
 
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+
     uint16_t parent;
     char leaf[24];
-    if (!resolve_parent_and_leaf(path, &parent, leaf, true)) return false;
+    if (!resolve_parent_and_leaf(abs, &parent, leaf, true)) return false;
 
     int target = dir_find_child(parent, leaf);
     if (target >= 0 && is_dir(&dir_table[target])) return false;
@@ -376,8 +488,11 @@ bool vfs_write_file(const char* path, const char* data) {
 }
 
 bool vfs_read_file(const char* path, char* buffer_out) {
-    int entry = resolve_exact_path(path);
-    if (entry < 0 || is_dir(&dir_table[entry])) return false;
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+
+    int entry = resolve_exact_path(abs);
+    if (entry < 0 || entry == ROOT_DIR || is_dir(&dir_table[entry])) return false;
 
     if (dir_table[entry].size == 0) {
         buffer_out[0] = '\0';
@@ -387,75 +502,54 @@ bool vfs_read_file(const char* path, char* buffer_out) {
     return read_file_data(dir_table[entry].first_cluster, buffer_out, (int)dir_table[entry].size);
 }
 
-static void print_entry_path(int idx) {
-    char parts[8][24];
-    int count = 0;
-    int cur = idx;
+void vfs_list_current_dir() {
+    int cwd = resolve_exact_path(cwd_path);
 
-    while (cur >= 0 && cur < MAX_DIR_ENTRIES && count < 8) {
-        str_cpy(parts[count++], dir_table[cur].name);
-        if (dir_table[cur].parent == ROOT_DIR) break;
-        cur = dir_table[cur].parent;
-    }
-
-    print("0:\\");
-    for (int i = count - 1; i >= 0; i--) {
-        print(parts[i]);
-        if (i > 0) putchar('\\');
-    }
-}
-
-void vfs_list_files() {
-    println("------ User Disk 0:\\ ------");
+    println("------ Directory Listing ------");
     bool empty = true;
 
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
-        if (is_used(&dir_table[i]) && !is_dir(&dir_table[i])) {
-            char path_buf[64];
-            path_buf[0] = '\0';
+        if (!is_used(&dir_table[i]) || dir_table[i].parent != (uint16_t)cwd) continue;
 
-            if (dir_table[i].parent == ROOT_DIR) {
-                str_cpy(path_buf, "0:\\");
-                str_cpy(path_buf + 3, dir_table[i].name);
-            } else {
-                /* only used for protected file check */
-                int p = 0;
-                path_buf[p++] = '0'; path_buf[p++] = ':'; path_buf[p++] = '\\';
-                int stack[8];
-                int n = 0;
-                int cur = i;
-                while (cur >= 0 && cur < MAX_DIR_ENTRIES && n < 8) {
-                    stack[n++] = cur;
-                    if (dir_table[cur].parent == ROOT_DIR) break;
-                    cur = dir_table[cur].parent;
-                }
-                for (int s = n - 1; s >= 0; s--) {
-                    const char* nm = dir_table[stack[s]].name;
-                    for (int k = 0; nm[k] && p < 63; k++) path_buf[p++] = nm[k];
-                    if (s > 0 && p < 63) path_buf[p++] = '\\';
-                }
-                path_buf[p] = '\0';
-            }
+        char full[64];
+        if (strcmp(cwd_path, "0:\\")) {
+            str_cpy(full, "0:\\");
+            str_cpy(full + 3, dir_table[i].name);
+        } else {
+            str_cpy(full, cwd_path);
+            int pos = str_len(full);
+            full[pos++] = '\\';
+            str_cpy(full + pos, dir_table[i].name);
+        }
 
-            if (is_protected_file(path_buf)) {
-                continue;
-            }
+        if (is_hidden_path(full)) continue;
 
-            print_entry_path(i);
+        if (is_dir(&dir_table[i])) print("[DIR] ");
+        else print("[FILE] ");
+        print(dir_table[i].name);
+        if (!is_dir(&dir_table[i])) {
             print(" (");
             printint((int)dir_table[i].size);
-            println(" bytes)");
-            empty = false;
+            print(" bytes)");
         }
+        putchar('\n');
+        empty = false;
     }
 
-    if (empty) println("No files found.");
-    println("---------------------------");
+    if (empty) println("(empty)");
+    println("-------------------------------");
+}
+
+void vfs_list_files() {
+    vfs_list_current_dir();
 }
 
 bool vfs_delete_file(const char* path) {
-    int entry = resolve_exact_path(path);
-    if (entry < 0 || is_dir(&dir_table[entry])) return false;
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+
+    int entry = resolve_exact_path(abs);
+    if (entry < 0 || entry == ROOT_DIR || is_dir(&dir_table[entry])) return false;
 
     if (dir_table[entry].first_cluster != FAT_FREE) {
         fat_free_chain(dir_table[entry].first_cluster);
@@ -477,12 +571,15 @@ bool vfs_read_file_line(const char* path, char* line_out) {
     static int index = 0;
     static bool loaded = false;
 
-    if (!loaded || !strcmp(loaded_path, path)) {
-        if (!vfs_read_file(path, file_buffer)) {
+    char abs[64];
+    if (!normalize_path(path, abs)) return false;
+
+    if (!loaded || !strcmp(loaded_path, abs)) {
+        if (!vfs_read_file(abs, file_buffer)) {
             loaded = false;
             return false;
         }
-        str_cpy(loaded_path, path);
+        str_cpy(loaded_path, abs);
         index = 0;
         loaded = true;
     }
@@ -507,9 +604,7 @@ int vfs_file_count() {
     int count = 0;
 
     for (int i = 0; i < MAX_DIR_ENTRIES; i++) {
-        if (is_used(&dir_table[i]) && !is_dir(&dir_table[i])) {
-            count++;
-        }
+        if (is_used(&dir_table[i]) && !is_dir(&dir_table[i])) count++;
     }
 
     return count;
@@ -523,12 +618,8 @@ void vfs_reset() {
     while (running) {
         char key = get_key();
 
-        if (!key) {
-            continue;
-        }
-        if (key == '\n') {
-            running = false;
-        }
+        if (!key) continue;
+        if (key == '\n') running = false;
         else if (key == 8) {
             if (ans_index > 0) {
                 ans_index--;
@@ -543,15 +634,14 @@ void vfs_reset() {
             ans[ans_index] = key;
             ans_index++;
         }
-        else {
-            continue;
-        }
     }
+
     if (strcmp(ans, "y")) {
         mem_zero((uint8_t*)fat, sizeof(fat));
         mem_zero((uint8_t*)dir_table, sizeof(dir_table));
         fs_flush_fat();
         fs_flush_dirs();
+        str_cpy(cwd_path, "0:\\");
 
         vfs_seed_defaults();
         putchar('\n');

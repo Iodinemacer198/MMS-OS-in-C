@@ -101,16 +101,32 @@ void clear_screen() {
 }
 
 void path_prepend(char* path) {
-    int len = 0;
-    while (path[len] != '\0') len++;
-
-    for (int i = len; i >= 0; i--) {
-        path[i + 3] = path[i];
+    if (path[0] == '0' && path[1] == ':' && path[2] == '\\') {
+        return;
     }
 
-    path[0] = '0';
-    path[1] = ':';
-    path[2] = '\\';
+    char cwd[64];
+    vfs_get_cwd(cwd);
+
+    int cwd_len = 0;
+    while (cwd[cwd_len] != '\0') cwd_len++;
+
+    int path_len = 0;
+    while (path[path_len] != '\0') path_len++;
+
+    bool need_sep = !(cwd_len == 3 && cwd[2] == '\\');
+    int prefix_len = cwd_len + (need_sep ? 1 : 0);
+
+    for (int i = path_len; i >= 0; i--) {
+        path[i + prefix_len] = path[i];
+    }
+
+    for (int i = 0; i < cwd_len; i++) {
+        path[i] = cwd[i];
+    }
+    if (need_sep) {
+        path[cwd_len] = '\\';
+    }
 }
 
 bool strscmp(const char* str, const char* check, const int count) {
@@ -386,8 +402,10 @@ void run_command() {
         println("                                      |");
         println("cc : Build a C source file            |  cexec : Run a compiled C file");
         println("                                      |");
-        println("read : Reads a file                   |  ls : Simple FEX");
-        println("mkf : Make a new text file            |  rmf : Delete a file");
+        println("ls : List current directory           |  pwd : Show current path");
+        println("cd : Change current directory         |  mkdir : Create directory");
+        println("rmdir : Remove empty directory        |  mkf : Make a new text file");
+        println("read : Read a file in current dir     |  rmf : Delete file in current dir");
         println("                                      |");
         println("reboot : Reboots system               |  shutdown : Shuts down system");
         println("reset : Resets system completely      |");
@@ -398,7 +416,11 @@ void run_command() {
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
     else if (strscmp(cmd_buffer, "read", 4)) read();
-    else if (strscmp(cmd_buffer, "ls", 2)) vfs_list_files();
+    else if (strscmp(cmd_buffer, "pwd", 3)) pwd();
+    else if (strscmp(cmd_buffer, "cd", 2)) cd();
+    else if (strscmp(cmd_buffer, "mkdir", 5)) mkdir_cmd();
+    else if (strscmp(cmd_buffer, "rmdir", 5)) rmdir_cmd();
+    else if (strscmp(cmd_buffer, "ls", 2)) ls();
     else if (strscmp(cmd_buffer, "time", 4)) print_time();
     else if (strscmp(cmd_buffer, "calc", 4)) run_calc();
     else if (strscmp(cmd_buffer, "wordle", 6)) run_wordle();
@@ -413,7 +435,10 @@ void run_command() {
     else println("Unknown command");
 
     //println("");
-    print("0:\\ > ");
+    char cwd_prompt[64];
+    vfs_get_cwd(cwd_prompt);
+    print(cwd_prompt);
+    print(" > ");
 
     cmd_index = 0;
 
@@ -458,7 +483,10 @@ void kernel_main() {
     println("Welcome to MMS-OS!");
     print_time();
     println("Type 'help' for commands");
-    print("0:\\ > ");
+    char cwd_prompt[64];
+    vfs_get_cwd(cwd_prompt);
+    print(cwd_prompt);
+    print(" > ");
 
     while (1) {
         char key = get_key();
