@@ -408,7 +408,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "cexec", 5)) run_tcc_exec();
     else if (strscmp(cmd_buffer, "shutdown", 8)) shutdown();
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
-    else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\ode.md");
+    else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
     else println("Unknown command");
 

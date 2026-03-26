@@ -19,8 +19,8 @@ extern int cursorX;
 
 void mkf() {
     int fileCount = vfs_file_count();
-    if (fileCount >= 12) {
-        println("There are too many files on this system! Use 'rmf' to delete some!"); 
+    if (fileCount >= 56) {
+        println("Directory table is full! Use 'rmf' to delete some files!");
         return;
     }
     print("File name: ");
