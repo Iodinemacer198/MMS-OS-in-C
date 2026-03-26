@@ -88,7 +88,7 @@ static uint16_t cwd_cluster = ROOT_CLUSTER;
 
 static const char* default_demo_source =
     "int main() {\n"
-    "println(\"Hello from Tiny C!\");\n"
+    "println(\"Hello, World!\");\n"
     "int answer = 2 + 3 * 4;\n"
     "printint(answer);\n"
     "println(\"\");\n"
@@ -586,9 +586,9 @@ static void vfs_seed_defaults() {
         vfs_make_dir("0:\\music");
         vfs_write_file("0:\\music\\ode.md", "370 400\n370 400\n392 400\n440 400\n440 400\n392 400\n370 400\n330 400\n294 400\n294 400\n330 400\n370 400\n370 600\n330 200\n330 800");
     }
-    if (!vfs_read_file("0:\\demo\\demo.c", read_buffer) || !streq(read_buffer, default_demo_source)) {
-        vfs_make_dir("0:\\demo");
-        vfs_write_file("0:\\demo\\demo.c", default_demo_source);
+    if (!vfs_read_file("0:\\programs\\demo.c", read_buffer) || !streq(read_buffer, default_demo_source)) {
+        vfs_make_dir("0:\\programs");
+        vfs_write_file("0:\\programs\\demo.c", default_demo_source);
     }
 }
 
@@ -605,10 +605,10 @@ void vfs_init() {
                  (bs->total_sectors_16 == FS_TOTAL_SECTORS);
 
     if (!valid) {
-        println("Formatting FAT16 drive...");
+        println("Formatting drive...");
         fs_format_fat16();
     } else {
-        println("FAT16 disk mounted successfully.");
+        println("Disk mounted successfully.");
     }
 
     fat_load();
@@ -785,7 +785,7 @@ bool vfs_read_file(const char* path, char* buffer_out) {
 }
 
 void vfs_list_current_dir() {
-    println("------ Directory Listing ------");
+    print("------ "); print(cwd_path); print(" ------"); putchar('\n');
     bool empty = true;
 
     int max_entries = (cwd_cluster == ROOT_CLUSTER) ? FS_ROOT_ENTRIES : ((SECTOR_SIZE * FS_SECTORS_PER_CLUSTER) / 32);
