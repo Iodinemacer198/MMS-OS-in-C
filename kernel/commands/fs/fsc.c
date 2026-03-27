@@ -26,34 +26,6 @@ static bool contains_sep(const char* str) {
     return false;
 }
 
-static void read_input(char* out, int max_len) {
-    int idx = 0;
-    bool running = true;
-
-    while (running) {
-        char key = get_key();
-        if (!key) continue;
-
-        if (key == '\n') {
-            running = false;
-        }
-        else if (key == 8) {
-            if (idx > 0) {
-                idx--;
-                out[idx] = '\0';
-                cursorX--;
-                putchar(' ');
-                cursorX--;
-            }
-        }
-        else if (idx < (max_len - 1)) {
-            putchar(key);
-            out[idx++] = key;
-            out[idx] = '\0';
-        }
-    }
-}
-
 void ls() {
     vfs_list_current_dir();
 }
@@ -64,74 +36,49 @@ void pwd() {
     println(cwd);
 }
 
-void cd() {
-    print("Directory: ");
-    char path[64] = "";
-    read_input(path, 64);
-
+void cd(const char* path) {
     if (vfs_change_dir(path)) {
-        putchar('\n');
     } else {
-        putchar('\n');
         println("Could not change directory.");
     }
 }
 
-void mkdir_cmd() {
-    print("Directory name: ");
-    char name[64] = "";
-    read_input(name, 64);
-
+void mkdir_cmd(char* name) {
     if (contains_sep(name)) {
-        putchar('\n');
         println("Use a single directory name (no path separators).");
         return;
     }
 
     path_prepend(name);
     if (vfs_make_dir(name)) {
-        putchar('\n');
         println("Directory created.");
     } else {
-        putchar('\n');
         println("Could not create directory.");
     }
 }
 
-void rmdir_cmd() {
-    print("Directory name: ");
-    char name[64] = "";
-    read_input(name, 64);
-
+void rmdir_cmd(char* name) {
     if (contains_sep(name)) {
-        putchar('\n');
         println("Use a single directory name (no path separators).");
         return;
     }
 
     path_prepend(name);
     if (vfs_remove_dir(name)) {
-        putchar('\n');
         println("Directory removed.");
     } else {
-        putchar('\n');
         println("Directory not empty, not found, or protected.");
     }
 }
 
-void mkf() {
+void mkf(char* path2) {
     int fileCount = vfs_file_count();
     if (fileCount >= 56) {
         println("Directory table is full! Use 'rmf' to delete some files!");
         return;
     }
 
-    print("File name: ");
-    char path2[64] = "";
-    read_input(path2, 64);
-
     if (contains_sep(path2)) {
-        putchar('\n');
         println("Use a single file name (no path separators).");
         return;
     }
@@ -140,18 +87,14 @@ void mkf() {
 
     char temp[512] = "";
     if (vfs_read_file(path2, temp)) {
-        putchar('\n');
         println("A file with this name already exists!");
         return;
     }
 
     if (!vfs_write_file(path2, "")) {
-        putchar('\n');
         println("Error: Could not create file.");
         return;
     }
-
-    putchar('\n');
     println("Write contents (type :s and press enter to save): ");
 
     char data[512] = "";
@@ -186,13 +129,8 @@ void mkf() {
     println("File saved.");
 }
 
-void read() {
-    print("File name: ");
-    char path[64] = "";
-    read_input(path, 64);
-
+void read(char* path) {
     if (contains_sep(path)) {
-        putchar('\n');
         println("Use a single file name (no path separators).");
         return;
     }
@@ -201,24 +139,17 @@ void read() {
 
     char read_buffer[512];
     if (vfs_read_file(path, read_buffer)) {
-        putchar('\n');
         println(read_buffer);
     }
     else {
-        putchar('\n');
         print("Error: ");
         print(path);
         println(" not found.");
     }
 }
 
-void rmf() {
-    print("File name: ");
-    char path2[64] = "";
-    read_input(path2, 64);
-
+void rmf(char* path2) {
     if (contains_sep(path2)) {
-        putchar('\n');
         println("Use a single file name (no path separators).");
         return;
     }
@@ -226,10 +157,8 @@ void rmf() {
     path_prepend(path2);
 
     if (!vfs_delete_file(path2)) {
-        putchar('\n');
         println("File not found.");
     } else {
-        putchar('\n');
         println("File deleted.");
     }
 }

@@ -827,7 +827,6 @@ void vfs_list_current_dir() {
     }
 
     if (empty) println("(empty)");
-    println("-------------------------------");
 }
 
 void vfs_list_files() {

@@ -138,6 +138,8 @@ bool strscmp(const char* str, const char* check, const int count) {
     return true;
 }
 
+
+
 // IO
 
 static inline uint8_t inb(uint16_t port) {
@@ -345,6 +347,20 @@ bool strcmp(const char* a, const char* b) {
     return a[i] == b[i];
 }
 
+char* getarg(const char* input, const int count) {
+    static char output[128];
+
+    int i = count + 1;
+    int out_index = 0;
+
+    while (i < 128 && input[i] != '\0') {
+        output[out_index++] = input[i++];
+    }
+
+    output[out_index] = '\0'; 
+    return output;
+}
+
 // Time & Date
 
 #define CMOS_ADDRESS 0x70
@@ -390,6 +406,8 @@ void print_time() {
 
 // Command logic
 
+char arg_buffer[128];
+
 void run_command() {
     putchar('\n');
 
@@ -415,17 +433,17 @@ void run_command() {
         println("Molecular Multiverse Services OS: developed by the the MMS team with C.");
         println("If you need support, contact therealiodinemacer or join ZAx3NN5TJY on Discord.");
     }
-    else if (strscmp(cmd_buffer, "read", 4)) read();
+    else if (strscmp(cmd_buffer, "read", 4)) read(getarg(cmd_buffer, 4));
     else if (strscmp(cmd_buffer, "pwd", 3)) pwd();
-    else if (strscmp(cmd_buffer, "cd", 2)) cd();
-    else if (strscmp(cmd_buffer, "mkdir", 5)) mkdir_cmd();
-    else if (strscmp(cmd_buffer, "rmdir", 5)) rmdir_cmd();
+    else if (strscmp(cmd_buffer, "cd", 2)) cd(getarg(cmd_buffer, 2));
+    else if (strscmp(cmd_buffer, "mkdir", 5)) mkdir_cmd(getarg(cmd_buffer, 5));
+    else if (strscmp(cmd_buffer, "rmdir", 5)) rmdir_cmd(getarg(cmd_buffer, 5));
     else if (strscmp(cmd_buffer, "ls", 2)) ls();
     else if (strscmp(cmd_buffer, "time", 4)) print_time();
     else if (strscmp(cmd_buffer, "calc", 4)) run_calc();
     else if (strscmp(cmd_buffer, "wordle", 6)) run_wordle();
-    else if (strscmp(cmd_buffer, "rmf", 3)) rmf();
-    else if (strscmp(cmd_buffer, "mkf", 3)) mkf();
+    else if (strscmp(cmd_buffer, "rmf", 3)) rmf(getarg(cmd_buffer, 3));
+    else if (strscmp(cmd_buffer, "mkf", 3)) mkf(getarg(cmd_buffer, 3));
     else if (strscmp(cmd_buffer, "cc", 2)) run_tcc_build();
     else if (strscmp(cmd_buffer, "cexec", 5)) run_tcc_exec();
     else if (strscmp(cmd_buffer, "shutdown", 8)) shutdown();
@@ -444,6 +462,9 @@ void run_command() {
 
     for(int i = 0; i < CMD_BUFFER; i++)
         cmd_buffer[i] = 0;
+
+    for(int i = 0; i < CMD_BUFFER; i++)
+        arg_buffer[i] = 0;
 }
 
 // Main loop
