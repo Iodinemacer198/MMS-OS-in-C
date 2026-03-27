@@ -10,17 +10,17 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Login system
 
 ## Use/Build instructions
-**Use from release ISO:** (iso/output)
-- Load ISO in your system of choice. It should work fine out the box.
-- This OS has only been fully tested in Qemu. I cannot guarantee its success in another VM or on, God forbid you try, actual hardware.
-
-**Build from source:**
+**Build from source:** (recommended)
 - Requires a Linux system or Windows Subsystem for Linux
 - Git clone project to your preferred directory
 - Make sure you are in the project directory in your terminal AND have Qemu installed
 - Run `chmod +x build.sh` and `chmod +x run.sh`
 - First run `./build.sh`, then if successful run `./run.sh`
 - Congrats! You are now in MMS-OS!
+- 
+**Use from release ISO:** (iso/output)
+- Load ISO in your system of choice. It should work fine out the box.
+- This OS has only been fully tested in Qemu. I cannot guarantee its success in another VM or on, God forbid you try, actual hardware.
 
 ## Contact
 This project is developed and maintained by the Molecular Multiverse Services team (just me so far, therealiodinemacer :D)
