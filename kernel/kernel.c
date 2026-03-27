@@ -138,7 +138,42 @@ bool strscmp(const char* str, const char* check, const int count) {
     return true;
 }
 
+// Color text
 
+void putcharc(char c, uint8_t color) {
+    if (c == '\n')
+    {
+        cursorX = 0;
+        cursorY++;
+    }
+    else
+    {
+        vga[cursorY * VGA_WIDTH + cursorX] = (color << 8) | c;
+        cursorX++;
+
+        if (cursorX >= VGA_WIDTH)
+        {
+            cursorX = 0;
+            cursorY++;
+        }
+    }
+
+    if (cursorY >= VGA_HEIGHT)
+    {
+        scroll();
+        cursorY = VGA_HEIGHT - 1;
+    }
+}
+
+void printc(const char* str, uint8_t color) {
+    for (int i = 0; str[i] != 0; i++)
+        putcharc(str[i], color);
+}
+
+void printlnc(const char* str, uint8_t color) {
+    printc(str, color);
+    putchar('\n');
+}
 
 // IO
 
@@ -450,6 +485,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
+    else if (strscmp(cmd_buffer, "test", 4)) printlnc("This command does nothing at the moment. Check in later!", 0x2);
     else println("Unknown command");
 
     //println("");

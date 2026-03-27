@@ -8,6 +8,8 @@ extern int atoi(const char* str);
 extern char get_key();
 extern bool isdigit(char c);
 extern void putchar(char c);
+extern void printlnc(const char* str, uint8_t color);
+extern void printc(const char* str, uint8_t color);
 
 bool contains(const char* buffer, int length, char target) {
     for (int i = 0; i < length; i++) {
@@ -154,12 +156,12 @@ void run_wordle() {
                 {
                     if (wc_index == 5) runningcheck = false;
                     else if (word[wc_index] == w_buffer[wc_index]) {
-                        print("[G]");
+                        printc("[G]", 0x2);
                         wc_index++;
                         win_check++;
                     }
                     else if (contains(word, 5, w_buffer[wc_index])) {
-                        print("[Y]");
+                        printc("[Y]", 0xE);
                         wc_index++;
                     }
                     else {
@@ -231,12 +233,12 @@ void run_wordle() {
                 {
                     if (wc_index == 5) runningcheck = false;
                     else if (word[wc_index] == w_buffer[wc_index]) {
-                        print("[G]");
+                        printc("[G]", 0x2);
                         wc_index++;
                         win_check++;
                     }
                     else if (contains(word, 5, w_buffer[wc_index])) {
-                        print("[Y]");
+                        printc("[Y]", 0xE);
                         wc_index++;
                     }
                     else {
@@ -308,12 +310,12 @@ void run_wordle() {
                 {
                     if (wc_index == 5) runningcheck = false;
                     else if (word[wc_index] == w_buffer[wc_index]) {
-                        print("[G]");
+                        printc("[G]", 0x2);
                         wc_index++;
                         win_check++;
                     }
                     else if (contains(word, 5, w_buffer[wc_index])) {
-                        print("[Y]");
+                        printc("[Y]", 0xE);
                         wc_index++;
                     }
                     else {
@@ -384,12 +386,12 @@ void run_wordle() {
                 {
                     if (wc_index == 5) runningcheck = false;
                     else if (word[wc_index] == w_buffer[wc_index]) {
-                        print("[G]");
+                        printc("[G]", 0x2);
                         wc_index++;
                         win_check++;
                     }
                     else if (contains(word, 5, w_buffer[wc_index])) {
-                        print("[Y]");
+                        printc("[Y]", 0xE);
                         wc_index++;
                     }
                     else {
@@ -460,12 +462,88 @@ void run_wordle() {
                 {
                     if (wc_index == 5) runningcheck = false;
                     else if (word[wc_index] == w_buffer[wc_index]) {
-                        print("[G]");
+                        printc("[G]", 0x2);
                         wc_index++;
                         win_check++;
                     }
                     else if (contains(word, 5, w_buffer[wc_index])) {
-                        print("[Y]");
+                        printc("[Y]", 0xE);
+                        wc_index++;
+                    }
+                    else {
+                        print("[-]");
+                        wc_index++;
+                    }
+                }
+                running = false;
+            }
+            else {
+                println("You need to a guess a 5 letter word!");
+                for (int i = 0; i < W_BUFFER; i++) {
+                    w_buffer[i] = 0;
+                }
+                wc_index = 0;
+                w_index = 0;
+            }
+        }
+        else {
+            continue;
+        }
+    }
+    putchar('\n');
+    if (win_check == 5) {
+        println("Correct!");
+        wc_index = 0;
+        w_index = 0;
+        win_check = 0;
+        running = true;
+        runningcheck = true;
+        for (int i = 0; i < W_BUFFER; i++) {
+            w_buffer[i] = 0;
+        }
+        return;
+    }
+    wc_index = 0;
+    w_index = 0;
+    win_check = 0;
+    running = true;
+    runningcheck = true;
+    for (int i = 0; i < W_BUFFER; i++) {
+        w_buffer[i] = 0;
+    }
+    while (running) {
+        char key = get_key();
+
+        if (!key) {
+            continue;
+        }
+        else if (isletter(key)) {
+            putchar(key);
+            w_buffer[w_index] = key;
+            w_index++;
+        }
+        else if (key == 8) {
+            if (w_index > 0) {
+                w_index--;
+                w_buffer[w_index] = '\0';
+                cursorX--;
+                putchar(' ');
+                cursorX--;
+            }
+        }
+        else if (key == '\n') {
+            putchar('\n');
+            if (strlength(w_buffer) == 5) {
+                while (runningcheck)
+                {
+                    if (wc_index == 5) runningcheck = false;
+                    else if (word[wc_index] == w_buffer[wc_index]) {
+                        printc("[G]", 0x2);
+                        wc_index++;
+                        win_check++;
+                    }
+                    else if (contains(word, 5, w_buffer[wc_index])) {
+                        printc("[Y]", 0xE);
                         wc_index++;
                     }
                     else {
@@ -504,6 +582,7 @@ void run_wordle() {
     else {
         println("Out of guesses! Word was:");
         print(word);
+        putchar('\n');
     }
     wc_index = 0;
     w_index = 0;
