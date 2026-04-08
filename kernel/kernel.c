@@ -485,7 +485,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
-    else if (strscmp(cmd_buffer, "test", 4)) printlnc("This command does nothing at the moment. Check in later!", 0x2);
+    else if (strscmp(cmd_buffer, "test", 4)) printlnc("This command does nothing at the moment. Check in later!", 0x02);
     else println("Unknown command");
 
     //println("");

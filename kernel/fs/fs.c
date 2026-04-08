@@ -8,6 +8,7 @@ extern void reboot();
 extern void putchar(char c);
 extern char get_key();
 extern void sleep();
+extern void printc(const char* str, uint8_t color);
 
 extern int cursorX;
 
@@ -895,8 +896,6 @@ bool vfs_read_file_line(const char* path, char* line_out) {
 
 int vfs_file_count() {
     int count = 0;
-
-    /* count root files */
     for (int i = 0; i < FS_ROOT_ENTRIES; i++) {
         FatDirEntry e;
         if (!read_dir_entry(ROOT_CLUSTER, i, &e)) break;
@@ -909,7 +908,7 @@ int vfs_file_count() {
 }
 
 void vfs_reset() {
-    print("Are you sure you would like to reset this system? (y/n): ");
+    printc("Are you sure you would like to reset this system? (y/n): ", 0x0C);
     char ans[4] = "";
     int ans_index = 0;
     bool running = true;
