@@ -5,10 +5,18 @@ extern void print(const char* str);
 extern void println(const char* str);
 extern void printint(int num);
 extern void reboot();
-extern void putchar(char c);
+extern void putchar(unsigned char c);
 extern char get_key();
 extern void sleep();
 extern void printc(const char* str, uint8_t color);
+
+void printmult(unsigned char c, int l) {
+    int i = 0;
+    while (i < l) {
+        putchar(c);
+        i++;
+    }
+}
 
 extern int cursorX;
 
@@ -790,7 +798,7 @@ bool vfs_read_file(const char* path, char* buffer_out) {
 }
 
 void vfs_list_current_dir() {
-    print("------ "); print(cwd_path); print(" ------"); putchar('\n');
+    printmult(0xCD, 6); print(" "); print(cwd_path); print(" "); printmult(0xCD, 6); putchar('\n');
     bool empty = true;
 
     int max_entries = (cwd_cluster == ROOT_CLUSTER) ? FS_ROOT_ENTRIES : ((SECTOR_SIZE * FS_SECTORS_PER_CLUSTER) / 32);
@@ -832,6 +840,15 @@ void vfs_list_current_dir() {
     }
 
     if (empty) println("(empty)");
+
+    printmult(0xCD, 14);
+    int i = 14;
+    int p = 0;
+    while (i < 128 && cwd_path[p] != '\0') {
+        putchar(0xCD);
+        i++; p++;
+    }
+    putchar('\n');
 }
 
 void vfs_list_files() {

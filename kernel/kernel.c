@@ -56,7 +56,7 @@ void scroll() {
     }
 }
 
-void putchar(char c) {
+void putchar(unsigned char c) {
     if (c == '\n')
     {
         cursorX = 0;
