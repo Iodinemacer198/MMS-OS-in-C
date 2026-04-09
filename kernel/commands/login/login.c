@@ -14,6 +14,7 @@ extern int memcmp(const void* s1, const void* s2, int n);
 extern bool vfs_read_file(const char* path, char* buffer_out);
 extern bool vfs_write_file(const char* path, const char* data);
 extern bool strcmp(const char* a, const char* b);
+extern void clear_screen();
 
 extern int cursorX;
 extern int cursorY;
@@ -195,5 +196,6 @@ void handle_login() {
         }
         putchar('\n');
         println("Successfully registered!");
+        sleep(10000);
     }
 }

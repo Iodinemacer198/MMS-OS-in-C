@@ -17,6 +17,20 @@ int cursorY = 0;
 
 uint8_t color = 0x0F;
 
+static inline uint8_t inb(uint16_t port) {
+    uint8_t result;
+    __asm__ volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
+    return result;
+}
+
+static inline void outb(uint16_t port, uint8_t value) {
+    __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port));
+}
+
+static inline void outw(uint16_t port, uint16_t value) {
+    __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
+}
+
 int memcmp(const void* s1, const void* s2, int n) {
     const unsigned char* p1 = s1;
     const unsigned char* p2 = s2;
@@ -37,6 +51,24 @@ void sleep(uint32_t count) {
 void memset(void* dest, uint8_t val, uint32_t len) {
     uint8_t* ptr = (uint8_t*)dest;
     while (len-- > 0) *ptr++ = val;
+}
+
+void update_cursor() {
+    uint16_t pos = cursorY * VGA_WIDTH + cursorX;
+
+    outb(0x3D4, 0x0F);           
+    outb(0x3D5, (uint8_t)(pos & 0xFF));
+
+    outb(0x3D4, 0x0E);             
+    outb(0x3D5, (uint8_t)(pos >> 8));
+}
+
+void enable_cursor(uint8_t start, uint8_t end) {
+    outb(0x3D4, 0x0A);
+    outb(0x3D5, (inb(0x3D5) & 0xC0) | start);
+
+    outb(0x3D4, 0x0B);
+    outb(0x3D5, (inb(0x3D5) & 0xE0) | end);
 }
 
 // Text
@@ -79,6 +111,8 @@ void putchar(unsigned char c) {
         scroll();
         cursorY = VGA_HEIGHT - 1;
     }
+
+    update_cursor();
 }
 
 void print(const char* str) {
@@ -175,21 +209,19 @@ void printlnc(const char* str, uint8_t color) {
     putchar('\n');
 }
 
+void printlnm(const char* str) { //Molecular logo
+    for (int i = 0; str[i] != '\0'; i++) {
+        if (str[i] == '*') {
+            putcharc('*', 0x07);
+        }
+        else {
+            putcharc(str[i], 0x0F); 
+        }
+    }
+    putchar('\n');
+}
+
 // IO
-
-static inline uint8_t inb(uint16_t port) {
-    uint8_t result;
-    __asm__ volatile ("inb %1, %0" : "=a"(result) : "Nd"(port));
-    return result;
-}
-
-static inline void outb(uint16_t port, uint8_t value) {
-    __asm__ volatile ("outb %0, %1" : : "a"(value), "Nd"(port));
-}
-
-static inline void outw(uint16_t port, uint16_t value) {
-    __asm__ volatile ("outw %0, %1" : : "a"(value), "Nd"(port));
-}
 
 void reboot() {
     while (inb(0x64) & 0x02);
@@ -294,6 +326,8 @@ void play_music(const char* path) {
 
     print("Now playing ");
     print(path);
+    print(" ");
+    putchar(0x0E);
     putchar('\n');
 
     while (vfs_read_file_line(path, line)) {
@@ -509,33 +543,39 @@ void kernel_main() {
     clear_screen();
 
     vfs_init();
+    enable_cursor(14, 15);
 
-    println("                  *                       ");
-    println("                   *                      ");
-    println("                   *+=----        **      ");
-    println("                   =-------      *        ");
-    println("    **       *****+--------+*****         ");
-    println("     *      **    --------=+     *        ");
-    println("      *++++**      ===--=++       **      ");
-    println("     +=-----=      =-::::-=               ");
-    println("    *=-------+*++++-::::::-+*****       **");
-    println("    +--------======-::::::-=    **      * ");
-    println("      -----==========-::--=      **   **  ");
-    println("      **   ++========----==      ++====++ ");
-    println("    **      ++======------==    +=======+*");
-    println("    *        **++++-------==-::-=========*");
-    println("                   ==------:::::-======== ");
-    println("                    *++++=-::::::-++++**  ");
-    println("                          --::::-=        ");
-    println("                           +====*         ");
-    println("                         **      *        ");
-    println("                        ***      ***      ");
-    println("                          *               ");
-    println("                           **             ");
+    clear_screen();
+    println(" ");
+
+    printlnm("                  *                       ");
+    printlnm("                   *                      ");
+    printlnm("                   *+=----        **      ");
+    printlnm("                   =-------      *        ");
+    printlnm("    **       *****+--------+*****         ");
+    printlnm("     *      **    --------=+     *        ");
+    printlnm("      *++++**      ===--=++       **      ");
+    printlnm("     +=-----=      =-::::-=               ");
+    printlnm("    *=-------+*++++-::::::-+*****       **");
+    printlnm("    +--------======-::::::-=    **      * ");
+    printlnm("      -----==========-::--=      **   **  ");
+    printlnm("      **   ++========----==      ++====++ ");
+    printlnm("    **      ++======------==    +=======+*");
+    printlnm("    *        **++++-------==-::-=========*");
+    printlnm("                   ==------:::::-======== ");
+    printlnm("                    *++++=-::::::-++++**  ");
+    printlnm("                          --::::-=        ");
+    printlnm("                           +====*         ");
+    printlnm("                         **      *        ");
+    printlnm("                        ***      ***      ");
+    printlnm("                          *               ");
+    printlnm("                           **             ");
 
     handle_login();
     beep(660, 500);
     beep(590, 500);
+
+    clear_screen();
 
     println("Welcome to MMS-OS!");
     print_time();
