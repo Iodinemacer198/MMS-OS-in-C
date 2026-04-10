@@ -9,14 +9,7 @@ extern void putchar(unsigned char c);
 extern char get_key();
 extern void sleep();
 extern void printc(const char* str, uint8_t color);
-
-void printmult(unsigned char c, int l) {
-    int i = 0;
-    while (i < l) {
-        putchar(c);
-        i++;
-    }
-}
+extern void printmult(unsigned char c, int l);
 
 extern int cursorX;
 

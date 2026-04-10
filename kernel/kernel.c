@@ -6,6 +6,7 @@
 #include "wordle.h"
 #include "fsc.h"
 #include "tinycc.h"
+#include "vgag.h"
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -172,9 +173,17 @@ bool strscmp(const char* str, const char* check, const int count) {
     return true;
 }
 
+void printmult(unsigned char c, int l) {
+    int i = 0;
+    while (i < l) {
+        putchar(c);
+        i++;
+    }
+}
+
 // Color text
 
-void putcharc(char c, uint8_t color) {
+void putcharc(unsigned char c, uint8_t color) {
     if (c == '\n')
     {
         cursorX = 0;
@@ -219,6 +228,14 @@ void printlnm(const char* str) { //Molecular logo
         }
     }
     putchar('\n');
+}
+
+void printmultc(unsigned char c, int l, uint8_t color) {
+    int i = 0;
+    while (i < l) {
+        putcharc(c, color);
+        i++;
+    }
 }
 
 // IO
@@ -519,7 +536,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
-    else if (strscmp(cmd_buffer, "test", 4)) printlnc("This command does nothing at the moment. Check in later!", 0x02);
+    else if (strscmp(cmd_buffer, "test", 4)) vgag_run();
     else println("Unknown command");
 
     //println("");
