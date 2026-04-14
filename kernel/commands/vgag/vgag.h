@@ -5,5 +5,6 @@
 #include <stdint.h>
 
 void vgag_run();
+void ind_login();
 
 #endif

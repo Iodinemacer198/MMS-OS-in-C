@@ -238,6 +238,26 @@ void printmultc(unsigned char c, int l, uint8_t color) {
     }
 }
 
+void printintc(int num, uint8_t color) {
+    char buf[16];
+    int i = 0;
+
+    if (num == 0)
+    {
+        putcharc('0', color);
+        return;
+    }
+
+    while (num > 0)
+    {
+        buf[i++] = '0' + (num % 10);
+        num /= 10;
+    }
+
+    while (i--)
+        putcharc(buf[i], color);
+}
+
 // IO
 
 void reboot() {
@@ -386,26 +406,23 @@ char get_key() {
 
     uint8_t scancode = inb(0x60);
 
-    if (scancode == 0x2A) {
+    if (scancode == 0x2A || scancode == 0x36) {
         shift_pressed = true;
         return 0;
     }
-    if (scancode == 0xAA) {
-        shift_pressed = false;
-        return 0;
-    }
-
-    if (scancode == 0x36) {
-        shift_pressed = true;
-        return 0;
-    }
-    if (scancode == 0xB6) {
+    if (scancode == 0xAA || scancode == 0xB6) {
         shift_pressed = false;
         return 0;
     }
 
     if (scancode & 0x80)
         return 0;
+
+    switch (scancode) {
+        case 0x3B: return 128;
+        case 0x3C: return 129; 
+        case 0x3D: return 130; 
+    }
 
     if (scancode > 57)
         return 0;
@@ -512,7 +529,7 @@ void run_command() {
         println("read : Read a file in current dir     |  rmf : Delete file in current dir");
         println("                                      |");
         println("reboot : Reboots system               |  shutdown : Shuts down system");
-        println("reset : Resets system completely      |");
+        println("reset : Resets system completely      |  vgag : Test the VGAG mode!");
     }
     else if (strscmp(cmd_buffer, "clear", 5)) clear_screen();
     else if (strscmp(cmd_buffer, "about", 5)) {
@@ -536,7 +553,7 @@ void run_command() {
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
-    else if (strscmp(cmd_buffer, "test", 4)) vgag_run();
+    else if (strscmp(cmd_buffer, "vgag", 4)) vgag_run();
     else println("Unknown command");
 
     //println("");
@@ -588,9 +605,10 @@ void kernel_main() {
     printlnm("                          *               ");
     printlnm("                           **             ");
 
-    handle_login();
-    beep(660, 500);
-    beep(590, 500);
+    //handle_login();
+    //beep(660, 500);
+    //beep(590, 500);
+    ind_login();
 
     clear_screen();
 
