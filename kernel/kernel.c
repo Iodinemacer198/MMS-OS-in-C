@@ -7,6 +7,8 @@
 #include "fsc.h"
 #include "tinycc.h"
 #include "vgag.h"
+#include "discord.h"
+#include "lwip_mbedtls.h"
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -520,6 +522,7 @@ void run_command() {
         println("calc : Simple calculator              |  clear : Clears the screen");
         println("time : Display current time and date  |  wordle : Plays a game of Wordle");
         println("music : Plays a test music file       |  cc : Build a Tiny C source file");
+        println("discord : QEMU Discord bot bridge     |  netinit : Initialize lwIP+TLS stack");
         println("                                      |");
         println("cc : Build a C source file            |  cexec : Run a compiled C file");
         println("                                      |");
@@ -554,6 +557,14 @@ void run_command() {
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");
     else if (strscmp(cmd_buffer, "reset", 5)) vfs_reset();
     else if (strscmp(cmd_buffer, "vgag", 4)) vgag_run();
+    else if (strscmp(cmd_buffer, "netinit", 7)) {
+        if (net_stack_init()) {
+            println("Network stack initialized with QEMU backend.");
+        } else {
+            println("Network stack failed to initialize.");
+        }
+    }
+    else if (strscmp(cmd_buffer, "discord", 7)) discord_command(getarg(cmd_buffer, 7));
     else println("Unknown command");
 
     //println("");
@@ -614,6 +625,9 @@ void kernel_main() {
 
     println("Welcome to MMS-OS!");
     print_time();
+    if (net_stack_init()) {
+        println("Network stack: lwIP + mbedTLS (QEMU bridge) ready.");
+    }
     println("Type 'help' for commands");
     char cwd_prompt[64];
     vfs_get_cwd(cwd_prompt);

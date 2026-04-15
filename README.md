@@ -9,6 +9,22 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Basic Tiny CC integration (close enough to actual C syntax, uses source functions)
 - Login system
 - A WIP VGA "graphics" (VGAG) system
+- QEMU-compatible lwIP + Mbed TLS style networking shim for Discord bot communication
+
+## Discord bot networking in QEMU
+MMS-OS now includes a lightweight lwIP + mbedTLS compatible layer that emits HTTPS requests over QEMU's `debugcon` port (`0xE9`). This keeps the kernel freestanding while allowing host-side tooling to relay Discord REST calls.
+
+### Shell commands
+- `netinit` - initialize the network/TLS runtime (also auto-runs during boot)
+- `discord status` - show runtime status
+- `discord token <BOT_TOKEN>` - set bot token
+- `discord channel <CHANNEL_ID>` - set destination channel
+- `discord ping` - queue `/api/v10/gateway/bot` probe
+- `discord send <message>` - queue message create request for the configured channel
+
+### QEMU notes
+- Run QEMU with `-debugcon file:mmsnet.log -global isa-debugcon.iobase=0xe9` (or equivalent in your launcher) so host-side relays can read `[MMSNET]` lines.
+- The kernel side composes Discord HTTPS payloads; host relay performs the real TCP/TLS send.
 
 ## Use/Build instructions
 **Build from source:** (recommended)
