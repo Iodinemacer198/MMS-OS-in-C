@@ -98,6 +98,12 @@ void vgag_blue() {
             vga[y * 80 + x] = (0x11 << 8) | 0xDB;
 }
 
+void vgag_scblue() {
+    for (int y = 2; y < 25; y++)
+        for (int x = 0; x < 80; x++)
+            vga[y * 80 + x] = (0x11 << 8) | 0xDB;
+}
+
 #define TL 0xC9  // ╔
 #define TR 0xBB  // ╗
 #define BL 0xC8  // ╚
@@ -144,6 +150,97 @@ void vgag_box() {
     
     dcX = 0; dcY = 0;
 }
+
+void vgag_bb() {
+    dcX = 3; dcY = 2;
+    while (dcY < 15) {
+        dprintmultc(0xDB, 15, 0x11);
+        dcX = 3;
+        dcY++;
+    }
+}
+
+void vgag_splitbox() {
+    dcX = 10; dcY = 5;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 10; dcY = 6;
+    while (dcY < 19) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 10;
+    } // Left side
+
+    dcX = 38; dcY = 6;
+    while (dcY < 19) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 38;
+    } // right side
+
+    dcX = 10; dcY = 19;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 11; dcY = 6;
+    while (dcY < 19) {
+        dprintmultc(0xDB, 27, 0x7);
+        dcX = 11;
+        dcY++;
+    } // Fill
+
+    dcX = 11; dcY = 20;
+    dprintmultc(0xDF, 29, 0x10); 
+    dcX = 39; dcY = 6;
+    while (dcY < 20) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 39;
+    } // Shadow
+    
+    dcX = 0; dcY = 0;
+
+
+    // bleh
+
+    dcX = 41; dcY = 5;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 41; dcY = 6;
+    while (dcY < 19) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 41;
+    } // Left side
+
+    dcX = 69; dcY = 6;
+    while (dcY < 19) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 69;
+    } // right side
+
+    dcX = 41; dcY = 19;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 42; dcY = 6;
+    while (dcY < 19) {
+        dprintmultc(0xDB, 27, 0x7);
+        dcX = 42;
+        dcY++;
+    } // Fill
+
+    dcX = 42; dcY = 20;
+    dprintmultc(0xDF, 29, 0x10); 
+    dcX = 70; dcY = 6;
+    while (dcY < 20) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 70;
+    } // Shadow
+    
+    dcX = 0; dcY = 0;
+}
+
 
 char usin_buffer2[20];
 int usin_index2 = 0;
@@ -433,10 +530,12 @@ void vgag_hello() {
     dcX = 11; dcY = 7;
     dprintc("Use function keys to navigate menus", 0x70);
     dcX = 11; dcY = 9;
+    dprintc("Use tab to return here at any time", 0x70);
+    dcX = 11; dcY = 11;
     dprintc("This graphics mode is extremely WIP", 0x70);
-    dcX = 11; dcY = 10;
-    dprintc("and may contain some issues", 0x70);
     dcX = 11; dcY = 12;
+    dprintc("and may contain some issues", 0x70);
+    dcX = 11; dcY = 14;
     dprintc("Developed by iodinemacer with C",0x70);
 }
 
@@ -447,6 +546,35 @@ void ind_login() {
     vgag_login();
     vgag_mol();
     dcX = 0; dcY = 0;
+}
+
+int last_second = 0;
+int frame_count = 0;
+int fps = 0;
+
+int get_fps() {
+    static int last_second = -1;
+    static int frame_count = 0;
+    static int fps = 0;
+
+    while (get_update_in_progress_flag());
+
+    uint8_t second = get_rtc_register(0x00);
+
+    second = (second & 0x0F) + ((second / 16) * 10);
+
+    frame_count++;
+
+    if (second != last_second) {
+        if (last_second != -1) {
+            fps = (fps * 3 + frame_count) / 4;
+        }
+
+        frame_count = 0;
+        last_second = second;
+    }
+
+    return fps;
 }
 
 void vgag_time() {
@@ -466,7 +594,14 @@ void vgag_time() {
     month  = (month & 0x0F) + ((month / 16) * 10);
     year   = (year & 0x0F) + ((year / 16) * 10);
 
-    dcX = 70; dcY = 0;
+    dcX = 50; dcY = 0;
+
+    int rfps = get_fps();
+
+    dprintc("FPS: ", 0x70); 
+    dprintintc(rfps, 0x70); 
+    
+    dcX = 70;
 
     dprintintc(hour, 0x70); dputcharc(':', 0x70);
     if (minute < 10) dprintintc(0, 0x70);
@@ -491,15 +626,88 @@ void vgag_taskbar() {
     vgag_time();
 }
 
+int fclick = 0;
+
+void vgag_intro() {
+    vgag_box(); vgag_hello(); vgag_iodine();
+    dcX = 11; dcY = 18;
+    dprintc("Press ESC to return to shell", 0x70);
+    fclick = 0;
+    dcX = 0; dcY = 0;
+    dputcharc(0xDB, 0x8);
+    dputcharc(0xF0, 0x8F);
+    dputcharc(0xDB, 0x8);
+    dprintmultc(0xDB, 1, 0x7);
+    dprintc("F1", 0x70);
+    dprintmultc(0xDB, 2, 0x7);
+    dprintc("F2", 0x70);
+    dprintmultc(0xDB, 2, 0x7);
+    dprintc("F3", 0x70);
+}
+
+void old_vgag_f1() {
+    /*
+    dcX = 3; dcY = 2;
+    while (dcY < 15) {
+        dprintmultc(0xDB, 20, 0x11);
+        dcX = 3;
+        dcY++;
+    }
+    */
+
+    dcX = 3; dcY = 2;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 3; dcY = 3;
+    while (dcY < 15) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 3;
+    } // Left side
+
+    dcX = 17; dcY = 3;
+    while (dcY < 15) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 17;
+    } // right side
+
+    dcX = 3; dcY = 15;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 4; dcY = 3;
+    while (dcY < 15) {
+        dprintmultc(0xDB, 13, 0x7);
+        dcX = 4;
+        dcY++;
+    } // Fill
+
+    dcX = 4; dcY = 16;
+    dprintmultc(0xDF, 6, 0x10); dprintmultc(0xDF, 9, 0x70);
+    dcX = 18; dcY = 3;
+    while (dcY < 16) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 18;
+    } // Shadow
+    
+    dcX = 0; dcY = 0;
+}
+
+void vgag_f1() {
+    vgag_scblue();
+    vgag_splitbox();
+    dcX = 10; dcY = 8;
+    dputcharc(0xC7, 0x70); dprintmultc(0xC4, 27, 0x70); dputcharc(0xB6, 0x70);
+    dcX = 42; dcY = 6;
+    dprintc("HISTORY", 0x70);
+}
+
 void vgag_run() {
     clear_screen();
     vgag_blue();
     vgag_taskbar();
-    vgag_box();
-    vgag_hello();
-    vgag_iodine();
-    dcX = 11; dcY = 18;
-    dprintc("Press ESC to return to shell", 0x70);
+    vgag_intro();
     dcX = 11; dcY = 6;
     cursorX = 11; cursorY = 6;
     bool running = true;
@@ -522,8 +730,15 @@ void vgag_run() {
                 cursorX--;
             }
         }
+        else if (key == 9) {
+            vgag_scblue();
+            vgag_intro();
+        }
         else if (key == 128) {
-            dcX = 3; dcY = 0;
+            dcX = 0; dcY = 0;
+            dputcharc(0xDB, 0x7);
+            dputcharc(0xF0, 0x70);
+            dputcharc(0xDB, 0x7);
             dputcharc(0xDB, 0x8);
             dprintc("F1", 0x8F);
             dprintmultc(0xDB, 1, 0x8);
@@ -532,9 +747,15 @@ void vgag_run() {
             dprintmultc(0xDB, 2, 0x7);
             dprintc("F3", 0x70);
             dprintmultc(0xDB, 1, 0x7);
+            fclick++;
+            if (fclick == 1) vgag_bb();
+            vgag_f1();
         }
         else if (key == 129) {
-            dcX = 3; dcY = 0;
+            dcX = 0; dcY = 0;
+            dputcharc(0xDB, 0x7);
+            dputcharc(0xF0, 0x70);
+            dputcharc(0xDB, 0x7);
             dprintmultc(0xDB, 1, 0x7);
             dprintc("F1", 0x70);
             dprintmultc(0xDB, 1, 0x7);
@@ -544,9 +765,14 @@ void vgag_run() {
             dprintmultc(0xDB, 1, 0x7);
             dprintc("F3", 0x70);
             dprintmultc(0xDB, 1, 0x7);
+            fclick++;
+            if (fclick == 1) vgag_bb();
         }
         else if (key == 130) {
-            dcX = 3; dcY = 0;
+            dcX = 0; dcY = 0;
+            dputcharc(0xDB, 0x7);
+            dputcharc(0xF0, 0x70);
+            dputcharc(0xDB, 0x7);
             dprintmultc(0xDB, 1, 0x7);
             dprintc("F1", 0x70);
             dprintmultc(0xDB, 2, 0x7);
@@ -556,8 +782,11 @@ void vgag_run() {
             dprintc("F3", 0x8F);
             dprintmultc(0xDB, 1, 0x8);
             dprintmultc(0xDB, 1, 0x7);
+            fclick++;
+            if (fclick == 1) vgag_bb();
         }
         else {
+            /*
             if (type_index <= 50) {
                 putcharc(key, 0x70);
                 type_buffer[type_index] = key;
@@ -566,6 +795,8 @@ void vgag_run() {
             else {
                 continue;
             }
+            */
+           continue;
         }
     }
     clear_screen();
