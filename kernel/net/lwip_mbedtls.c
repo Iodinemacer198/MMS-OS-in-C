@@ -101,9 +101,7 @@ static bool qemu_bridge_send_https(const char* host, const char* path, const cha
 
     qemu_bridge_emit_line(packet);
 
-    if (status_code) {
-        *status_code = 202;
-    }
+    if (status_code) *status_code = 0;
     return true;
 }
 

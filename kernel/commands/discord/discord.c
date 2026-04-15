@@ -97,9 +97,14 @@ void discord_command(const char* input) {
     if (starts_with(cmd, "ping")) {
         int code = 0;
         if (net_discord_gateway_ping(&code)) {
-            print("Gateway request queued over TLS bridge, status: ");
-            printint(code);
-            println("");
+            println("Gateway request emitted to QEMU bridge.");
+            if (code > 0) {
+                print("Upstream HTTP status: ");
+                printint(code);
+                println("");
+            } else {
+                println("No upstream status available in-kernel.");
+            }
         } else {
             println("Ping failed. Ensure netinit and token are configured.");
         }
@@ -115,9 +120,14 @@ void discord_command(const char* input) {
 
         int code = 0;
         if (net_discord_post_message(message, &code)) {
-            print("Discord message queued over TLS bridge, status: ");
-            printint(code);
-            println("");
+            println("Discord message emitted to QEMU bridge.");
+            if (code > 0) {
+                print("Upstream HTTP status: ");
+                printint(code);
+                println("");
+            } else {
+                println("No upstream status available in-kernel.");
+            }
         } else {
             println("Send failed. Ensure netinit, token, and channel are configured.");
         }

@@ -21,6 +21,7 @@ MMS-OS now includes a lightweight lwIP + mbedTLS compatible layer that emits HTT
 - `discord channel <CHANNEL_ID>` - set destination channel
 - `discord ping` - queue `/api/v10/gateway/bot` probe
 - `discord send <message>` - queue message create request for the configured channel
+- Note: kernel-side output confirms emit-to-bridge only; final Discord HTTP status must come from the host relay logs.
 
 ### QEMU notes
 - Run QEMU with `-debugcon file:mmsnet.log -global isa-debugcon.iobase=0xe9` (or equivalent in your launcher) so host-side relays can read `[MMSNET]` lines.
