@@ -3,7 +3,7 @@ set -e
 
 if ! command -v grub-mkrescue >/dev/null 2>&1; then
     echo "Error: grub-mkrescue is required to build a bootable ISO."
-    echo "Install on Debian/Ubuntu with: sudo apt install grub-pc-bin grub-efi-amd64-bin xorriso mtools syslinux-common"
+    echo "Install on Debian/Ubuntu with: sudo apt install grub-pc-bin grub-efi-amd64-bin xorriso mtools syslinux-utils"
     exit 1
 fi
 
@@ -37,20 +37,16 @@ echo "Copying kernel..."
 cp iso/build/kernel.bin iso/root/boot/kernel.bin
 
 echo "Building ISO..."
+grub-mkrescue -o iso/output/mms-os.iso iso/root
 
-XORRISO_HYBRID_ARGS=()
-for mbr in \
-    /usr/lib/ISOLINUX/isohdpfx.bin \
-    /usr/lib/syslinux/isohdpfx.bin \
-    /usr/share/syslinux/isohdpfx.bin; do
-    if [ -f "$mbr" ]; then
-        XORRISO_HYBRID_ARGS+=(-isohybrid-mbr "$mbr")
-        break
+if command -v isohybrid >/dev/null 2>&1; then
+    echo "Applying isohybrid post-processing..."
+    if ! isohybrid --uefi iso/output/mms-os.iso 2>/dev/null; then
+        isohybrid iso/output/mms-os.iso
     fi
-done
-XORRISO_HYBRID_ARGS+=(-isohybrid-gpt-basdat)
-
-grub-mkrescue -o iso/output/mms-os.iso iso/root -- "${XORRISO_HYBRID_ARGS[@]}"
+else
+    echo "Warning: isohybrid not found; ISO may still boot, but USB boot compatibility can be lower on some firmware."
+fi
 
 if command -v isoinfo >/dev/null 2>&1; then
     echo "Verifying El Torito boot entries..."

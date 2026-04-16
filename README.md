@@ -15,7 +15,7 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Requires a Linux system or Windows Subsystem for Linux
 - Git clone project to your preferred directory
 - Make sure you are in the project directory in your terminal AND have Qemu installed
-- For ISO creation, install: `grub-pc-bin grub-efi-amd64-bin xorriso mtools syslinux-common`
+- For ISO creation, install: `grub-pc-bin grub-efi-amd64-bin xorriso mtools syslinux-utils`
 - Run `chmod +x build.sh` and `chmod +x run.sh`
 - First run `./build.sh`, then if successful run `./run.sh`
 - Congrats! You are now in MMS-OS!
@@ -29,6 +29,7 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
 - Write to a USB drive (replace `/dev/sdX` carefully):
   - `sudo dd if=iso/output/mms-os.iso of=/dev/sdX bs=4M status=progress oflag=sync`
 - Boot target machine from the USB device in BIOS or UEFI mode.
+- `build.sh` also runs `isohybrid` (if installed) to improve USB firmware compatibility.
 
 **Windows (Rufus) USB creation**
 - Yes, you can use Rufus to flash `iso/output/mms-os.iso`.
