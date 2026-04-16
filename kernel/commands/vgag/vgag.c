@@ -703,6 +703,12 @@ void vgag_f1() {
     dprintc("HISTORY", 0x70);
 }
 
+void handle_calc() {
+    //this will exist at some point - I just wanna play ksp rn
+}
+
+bool f1_open = false;
+
 void vgag_run() {
     clear_screen();
     vgag_blue();
@@ -733,8 +739,10 @@ void vgag_run() {
         else if (key == 9) {
             vgag_scblue();
             vgag_intro();
+            f1_open = false;
         }
         else if (key == 128) {
+            cursorX = 11; cursorY = 6;
             dcX = 0; dcY = 0;
             dputcharc(0xDB, 0x7);
             dputcharc(0xF0, 0x70);
@@ -750,6 +758,7 @@ void vgag_run() {
             fclick++;
             if (fclick == 1) vgag_bb();
             vgag_f1();
+            f1_open = true;
         }
         else if (key == 129) {
             dcX = 0; dcY = 0;
@@ -767,6 +776,7 @@ void vgag_run() {
             dprintmultc(0xDB, 1, 0x7);
             fclick++;
             if (fclick == 1) vgag_bb();
+            f1_open = false;
         }
         else if (key == 130) {
             dcX = 0; dcY = 0;
@@ -784,19 +794,19 @@ void vgag_run() {
             dprintmultc(0xDB, 1, 0x7);
             fclick++;
             if (fclick == 1) vgag_bb();
+            f1_open = false;
         }
         else {
-            /*
-            if (type_index <= 50) {
-                putcharc(key, 0x70);
-                type_buffer[type_index] = key;
-                type_index++;
+            if (f1_open) {           
+                if (type_index <= 25) {
+                    putcharc(key, 0x70);
+                    type_buffer[type_index] = key;
+                    type_index++;
+                }
             }
             else {
                 continue;
             }
-            */
-           continue;
         }
     }
     clear_screen();
