@@ -1,22 +1,30 @@
 #!/bin/bash
 set -e
 
+if ! command -v grub-mkrescue >/dev/null 2>&1; then
+    echo "Error: grub-mkrescue is required to build a bootable ISO."
+    echo "Install on Debian/Ubuntu with: sudo apt install grub-pc-bin grub-efi-amd64-bin xorriso mtools"
+    exit 1
+fi
+
 mkdir -p iso/build
 mkdir -p iso/root/boot
 mkdir -p iso/output
 
+CFLAGS="-m32 -ffreestanding -fno-pie -fno-stack-protector -O2 -Wall"
+
 echo "Compiling kernel (32-bit)..."
-gcc -m32 -ffreestanding -Ikernel/fs -Ikernel/commands -Ikernel/commands/calc -Ikernel/commands/login -Ikernel/commands/fs -Ikernel/commands/vgag -Ikernel/commands/wordle -Ikernel/commands/tcc -c kernel/kernel.c -o iso/build/kernel.o -O2 -Wall
+gcc $CFLAGS -Ikernel/fs -Ikernel/commands -Ikernel/commands/calc -Ikernel/commands/login -Ikernel/commands/fs -Ikernel/commands/vgag -Ikernel/commands/wordle -Ikernel/commands/tcc -c kernel/kernel.c -o iso/build/kernel.o
 
 echo "Compiling file system drivers..."
-gcc -m32 -ffreestanding -c kernel/fs/ata.c -o iso/build/ata.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/fs/fs.c -o iso/build/fs.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/commands/calc/calc.c -o iso/build/calc.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/commands/login/login.c -o iso/build/login.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/commands/wordle/wordle.c -o iso/build/wordle.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/commands/fs/fsc.c -o iso/build/fsc.o -O2 -Wall
-gcc -m32 -ffreestanding -c kernel/commands/vgag/vgag.c -o iso/build/vgag.o -O2 -Wall
-gcc -m32 -ffreestanding -Ikernel/commands/tcc -c kernel/commands/tcc/tinycc.c -o iso/build/tinycc.o -O2 -Wall
+gcc $CFLAGS -c kernel/fs/ata.c -o iso/build/ata.o
+gcc $CFLAGS -c kernel/fs/fs.c -o iso/build/fs.o
+gcc $CFLAGS -c kernel/commands/calc/calc.c -o iso/build/calc.o
+gcc $CFLAGS -c kernel/commands/login/login.c -o iso/build/login.o
+gcc $CFLAGS -c kernel/commands/wordle/wordle.c -o iso/build/wordle.o
+gcc $CFLAGS -c kernel/commands/fs/fsc.c -o iso/build/fsc.o
+gcc $CFLAGS -c kernel/commands/vgag/vgag.c -o iso/build/vgag.o
+gcc $CFLAGS -Ikernel/commands/tcc -c kernel/commands/tcc/tinycc.c -o iso/build/tinycc.o
 
 echo "Assembling boot code..."
 nasm -f elf32 boot/boot.asm -o iso/build/boot.o
@@ -31,4 +39,11 @@ cp iso/build/kernel.bin iso/root/boot/kernel.bin
 echo "Building ISO..."
 grub-mkrescue -o iso/output/mms-os.iso iso/root
 
-echo "Build complete!"
+if command -v isoinfo >/dev/null 2>&1; then
+    echo "Verifying El Torito boot entries..."
+    isoinfo -d -i iso/output/mms-os.iso | grep -q "El Torito"
+fi
+
+echo "Build complete! Output: iso/output/mms-os.iso"
+echo "This ISO is hybrid and can be written directly to a USB drive with:"
+echo "sudo dd if=iso/output/mms-os.iso of=/dev/sdX bs=4M status=progress oflag=sync"
