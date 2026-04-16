@@ -3,7 +3,7 @@ set -e
 
 if ! command -v grub-mkrescue >/dev/null 2>&1; then
     echo "Error: grub-mkrescue is required to build a bootable ISO."
-    echo "Install on Debian/Ubuntu with: sudo apt install grub-pc-bin grub-efi-amd64-bin xorriso mtools"
+    echo "Install on Debian/Ubuntu with: sudo apt install grub-pc-bin grub-efi-amd64-bin xorriso mtools syslinux-common"
     exit 1
 fi
 
@@ -37,13 +37,32 @@ echo "Copying kernel..."
 cp iso/build/kernel.bin iso/root/boot/kernel.bin
 
 echo "Building ISO..."
-grub-mkrescue -o iso/output/mms-os.iso iso/root
+
+XORRISO_HYBRID_ARGS=()
+for mbr in \
+    /usr/lib/ISOLINUX/isohdpfx.bin \
+    /usr/lib/syslinux/isohdpfx.bin \
+    /usr/share/syslinux/isohdpfx.bin; do
+    if [ -f "$mbr" ]; then
+        XORRISO_HYBRID_ARGS+=(-isohybrid-mbr "$mbr")
+        break
+    fi
+done
+XORRISO_HYBRID_ARGS+=(-isohybrid-gpt-basdat)
+
+grub-mkrescue -o iso/output/mms-os.iso iso/root -- "${XORRISO_HYBRID_ARGS[@]}"
 
 if command -v isoinfo >/dev/null 2>&1; then
     echo "Verifying El Torito boot entries..."
     isoinfo -d -i iso/output/mms-os.iso | grep -q "El Torito"
 fi
 
+if command -v fdisk >/dev/null 2>&1; then
+    echo "Verifying hybrid partition map..."
+    fdisk -l iso/output/mms-os.iso >/dev/null
+fi
+
 echo "Build complete! Output: iso/output/mms-os.iso"
 echo "This ISO is hybrid and can be written directly to a USB drive with:"
 echo "sudo dd if=iso/output/mms-os.iso of=/dev/sdX bs=4M status=progress oflag=sync"
+echo "If firmware still skips USB, disable Secure Boot and pick the USB entry explicitly in the boot menu."
