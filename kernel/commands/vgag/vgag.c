@@ -104,6 +104,24 @@ void vgag_scblue() {
             vga[y * 80 + x] = (0x11 << 8) | 0xDB;
 }
 
+int int_length(int value) {
+    int length = 0;
+
+    if (value == 0) return 1;
+
+    if (value < 0) {
+        length++;
+        value = -value;
+    }
+
+    while (value > 0) {
+        value /= 10;
+        length++;
+    }
+
+    return length;
+}
+
 #define TL 0xC9  // ╔
 #define TR 0xBB  // ╗
 #define BL 0xC8  // ╚
@@ -161,37 +179,37 @@ void vgag_bb() {
 }
 
 void vgag_splitbox() {
-    dcX = 10; dcY = 5;
+    dcX = 10; dcY = 4;
     dputcharc(0xC9, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBB, 0x70); // Top
 
-    dcX = 10; dcY = 6;
-    while (dcY < 19) {
+    dcX = 10; dcY = 5;
+    while (dcY < 20) {
         dputcharc(0xBA, 0x70);
         dcY++;
         dcX = 10;
     } // Left side
 
-    dcX = 38; dcY = 6;
-    while (dcY < 19) {
+    dcX = 38; dcY = 5;
+    while (dcY < 20) {
         dputcharc(0xBA, 0x70);
         dcY++;
         dcX = 38;
     } // right side
 
-    dcX = 10; dcY = 19;
+    dcX = 10; dcY = 20;
     dputcharc(0xC8, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBC, 0x70); // Bottom
 
-    dcX = 11; dcY = 6;
-    while (dcY < 19) {
+    dcX = 11; dcY = 5;
+    while (dcY < 20) {
         dprintmultc(0xDB, 27, 0x7);
         dcX = 11;
         dcY++;
     } // Fill
 
-    dcX = 11; dcY = 20;
+    dcX = 11; dcY = 21;
     dprintmultc(0xDF, 29, 0x10); 
-    dcX = 39; dcY = 6;
-    while (dcY < 20) {
+    dcX = 39; dcY = 5;
+    while (dcY < 21) {
         dputcharc(0xDB, 0x0);
         dcY++;
         dcX = 39;
@@ -202,37 +220,37 @@ void vgag_splitbox() {
 
     // bleh
 
-    dcX = 41; dcY = 5;
+    dcX = 41; dcY = 4;
     dputcharc(0xC9, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBB, 0x70); // Top
 
-    dcX = 41; dcY = 6;
-    while (dcY < 19) {
+    dcX = 41; dcY = 5;
+    while (dcY < 20) {
         dputcharc(0xBA, 0x70);
         dcY++;
         dcX = 41;
     } // Left side
 
-    dcX = 69; dcY = 6;
-    while (dcY < 19) {
+    dcX = 69; dcY = 5;
+    while (dcY < 20) {
         dputcharc(0xBA, 0x70);
         dcY++;
         dcX = 69;
     } // right side
 
-    dcX = 41; dcY = 19;
+    dcX = 41; dcY = 20;
     dputcharc(0xC8, 0x70); dprintmultc(0xCD, 27, 0x70); dputcharc(0xBC, 0x70); // Bottom
 
-    dcX = 42; dcY = 6;
-    while (dcY < 19) {
+    dcX = 42; dcY = 5;
+    while (dcY < 20) {
         dprintmultc(0xDB, 27, 0x7);
         dcX = 42;
         dcY++;
     } // Fill
 
-    dcX = 42; dcY = 20;
+    dcX = 42; dcY = 21;
     dprintmultc(0xDF, 29, 0x10); 
     dcX = 70; dcY = 6;
-    while (dcY < 20) {
+    while (dcY < 21) {
         dputcharc(0xDB, 0x0);
         dcY++;
         dcX = 70;
@@ -240,7 +258,6 @@ void vgag_splitbox() {
     
     dcX = 0; dcY = 0;
 }
-
 
 char usin_buffer2[20];
 int usin_index2 = 0;
@@ -697,17 +714,112 @@ void old_vgag_f1() {
 void vgag_f1() {
     vgag_scblue();
     vgag_splitbox();
-    dcX = 10; dcY = 8;
+    dcX = 10; dcY = 7;
     dputcharc(0xC7, 0x70); dprintmultc(0xC4, 27, 0x70); dputcharc(0xB6, 0x70);
-    dcX = 42; dcY = 6;
+    dcX = 42; dcY = 5;
     dprintc("HISTORY", 0x70);
+    dcX = 41; dcY = 6;
+    dputcharc(0xC7, 0x70); dprintmultc(0xC4, 27, 0x70); dputcharc(0xB6, 0x70);
+
+    //numpad 1
+
+    dcX = 14; dcY = 8;
+    dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70);
+    dcX = 14; dcY = 9;
+    dputcharc(0xB3, 0x70); dputcharc('1', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('2', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('3', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('+', 0x70); dputcharc(0xB3, 0x70);
+    dcX = 14; dcY = 10;
+    dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); 
+
+    //numpad 2
+
+    dcX = 14; dcY = 11;
+    dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70);
+    dcX = 14; dcY = 12;
+    dputcharc(0xB3, 0x70); dputcharc('4', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('5', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('6', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('-', 0x70); dputcharc(0xB3, 0x70);
+    dcX = 14; dcY = 13;
+    dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); 
+
+    //numpad 3
+
+    dcX = 14; dcY = 14;
+    dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70);
+    dcX = 14; dcY = 15;
+    dputcharc(0xB3, 0x70); dputcharc('7', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('8', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('9', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('*', 0x70); dputcharc(0xB3, 0x70);
+    dcX = 14; dcY = 16;
+    dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); 
+
+    //numpad 4
+    dcX = 14; dcY = 17;
+    dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70); dcX = dcX + 3; dputcharc(0xDA, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xBF, 0x70);
+    dcX = 14; dcY = 18;
+    dputcharc(0xB3, 0x70); dputcharc(' ', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('0', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc(' ', 0x70); dputcharc(0xB3, 0x70); dcX = dcX + 3; dputcharc(0xB3, 0x70); dputcharc('/', 0x70); dputcharc(0xB3, 0x70);
+    dcX = 14; dcY = 19;
+    dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); 
 }
 
-void handle_calc() {
-    //this will exist at some point - I just wanna play ksp rn
-}
+char num1[9];
+bool num1_focus = true;
+int num1_index = 0;
+
+char num2[9];
+bool num2_focus = false;
+int num2_index = 0;
+
+char op[1];
+int op_index = 0;
+
+bool finished = false;
+
+int history_y = 7;
 
 bool f1_open = false;
+
+void debug() {
+    dcX = 0; dcY = 24;
+    if (f1_open == true) dprintc("True", 0x17);
+    else if (f1_open == false) dprintc("False", 0x17);
+    dcX = 6;
+    if (num1_focus == true) dprintc("num1", 0x17);
+    else if (num2_focus == true) dprintc("num2", 0x17);
+}
+
+int last_dcX = 0;
+int last_dcY = 0;
+
+void calc_reset() {
+    num1_focus = true;
+    num2_focus = false;
+    for (int i = 0; i < 9; i++) {
+        num1[i] = 0;
+    }
+    num1_index = 0;
+    for (int i = 0; i < 9; i++) {
+        num2[i] = 0;
+    }
+    num2_index = 0;
+    for (int i = 0; i < 1; i++) {
+        op[i] = 0;
+    }
+    op_index = 0;
+    dcX = 11; dcY = 5;
+    dprintmultc(0xDB, 27, 0x7);
+    dcX = 11; dcY = 6;
+    dprintmultc(0xDB, 27, 0x7);
+    cursorX = 11; cursorY = 5;
+}
+
+void right_reset() {
+    dcX = 42; dcY = 7;
+    while (dcY < 20) {
+        dprintmultc(0xDB, 27, 0x7);
+        dcX = 42;
+        dcY++;
+    } 
+    history_y = 7;
+}
+
+int INT_MAX =  2147483647;
+int INT_MIN = -2147483648;
 
 void vgag_run() {
     clear_screen();
@@ -715,10 +827,11 @@ void vgag_run() {
     vgag_taskbar();
     vgag_intro();
     dcX = 11; dcY = 6;
-    cursorX = 11; cursorY = 6;
+    cursorX = 11; cursorY = 5;
     bool running = true;
     while (running) {
         vgag_time();
+        //debug();
         unsigned char key = get_key();
 
         if (!key) {
@@ -726,15 +839,6 @@ void vgag_run() {
         }
         else if (key == 27) {
             running = false;
-        }
-        else if (key == 8) {
-            if (type_index > 0) {
-                type_index--;
-                type_buffer[type_index] = '\0';
-                cursorX--;
-                putcharc(' ', 0x70);
-                cursorX--;
-            }
         }
         else if (key == 9) {
             vgag_scblue();
@@ -759,6 +863,7 @@ void vgag_run() {
             if (fclick == 1) vgag_bb();
             vgag_f1();
             f1_open = true;
+            calc_reset();
         }
         else if (key == 129) {
             dcX = 0; dcY = 0;
@@ -797,11 +902,163 @@ void vgag_run() {
             f1_open = false;
         }
         else {
-            if (f1_open) {           
-                if (type_index <= 25) {
-                    putcharc(key, 0x70);
-                    type_buffer[type_index] = key;
-                    type_index++;
+            if (f1_open == true) {   
+                if (finished == true) {
+                    calc_reset(); 
+                    finished = false;  
+                }    
+                else if (num1_focus == true) {
+                    if ((key == '+' || key == '-' || key == '*' || key == '/') && num1_index > 0) {
+                        putcharc(' ', 0x70); putcharc(key, 0x70); putcharc(' ', 0x70); 
+                        op[op_index] = key;
+                        op_index++;
+                        num2_focus = true;
+                        num1_focus = false;
+                    }
+                    else if (key == '\n') {
+                        dcX = 32; dcY = 6;
+                        dprintc("Error!", 0x74);
+                        finished = true;
+                    }
+                    else if (num1_index == 8) {
+                        continue;
+                    }
+                    else if (isdigit(key)) {
+                        putcharc(key, 0x70);   
+                        num1[num1_index] = key;
+                        num1_index++;
+                    }
+                    else {
+                        continue;
+                    }
+                }
+                if (num2_focus == true) {
+                    if (key == '\n' && num2_index == 0) {
+                        dcX = 32; dcY = 6;
+                        dprintc("Error!", 0x74);
+                        finished = true;
+                    }
+                    else if (key == '\n') {
+                        int first_num = atoi(num1);
+                        int second_num = atoi(num2);
+                        if (strcmp(op, "+")) {
+                            if ((second_num > 0 && first_num > INT_MAX - second_num) || (second_num < 0 && first_num < INT_MIN - second_num)) {
+                                dcX = 23; dcY = 6;
+                                dprintc("Overflow error!", 0x74);
+                                finished = true;
+                            }
+                            else {
+                                int output = first_num + second_num;
+                                int offset = int_length(output) + (output < 0 ? 2 : 1);
+                                dcX = 38 - offset; dcY = 6;
+                                dputcharc('=', 0x70);
+                                dprintintc(output, 0x70);
+                                if (history_y >= 18) right_reset();
+                                dcX = 42; dcY = history_y;
+                                dprintintc(first_num, 0x70); dputcharc(' ', 0x70); dprintc(op, 0x70); dputcharc(' ', 0x70); dprintintc(second_num, 0x70);
+                                dcX = 69 - offset; dcY++;
+                                dputcharc('=', 0x70); dprintintc(output, 0x70);
+                                dcY = dcY + 2;
+                                history_y = dcY;
+                                finished = true;
+                            }
+                        }
+                        else if (strcmp(op, "-")) {
+                            if ((second_num < 0 && first_num > INT_MAX + second_num) || (second_num > 0 && first_num < INT_MIN + second_num)) {
+                                dcX = 23; dcY = 6;
+                                dprintc("Overflow error!", 0x74);
+                                finished = true;
+                            }
+                            else {
+                                int output = first_num - second_num;
+                                int unsigned_output = (output < 0) ? -output : output;
+                                int offset = int_length(output) + (output < 0 ? 2 : 1);
+                                if (output < 0) { 
+                                    dcX = (38 - offset + 1); dcY = 6; 
+                                    dputcharc('=', 0x70); dputcharc('-', 0x70); dprintintc(unsigned_output, 0x70);
+                                    if (history_y >= 18) right_reset();
+                                    dcX = 42; dcY = history_y;
+                                    dprintintc(first_num, 0x70); dputcharc(' ', 0x70); dprintc(op, 0x70); dputcharc(' ', 0x70); dprintintc(second_num, 0x70);
+                                    dcX = 69 - offset + 1; dcY++;
+                                    dputcharc('=', 0x70); dputcharc('-', 0x70); dprintintc(unsigned_output, 0x70);
+                                    dcY = dcY + 2;
+                                    history_y = dcY; 
+                                    finished = true; 
+                                } else { 
+                                    dcX = (38 - offset); dcY = 6; 
+                                    dputcharc('=', 0x70); dprintintc(output, 0x70); 
+                                    if (history_y >= 18) right_reset();
+                                    dcX = 42; dcY = history_y;
+                                    dprintintc(first_num, 0x70); dputcharc(' ', 0x70); dprintc(op, 0x70); dputcharc(' ', 0x70); dprintintc(second_num, 0x70);
+                                    dcX = 69 - offset; dcY++;
+                                    dputcharc('=', 0x70); dprintintc(output, 0x70);
+                                    dcY = dcY + 2;
+                                    history_y = dcY;
+                                    finished = true; 
+                                }
+                            }
+                        }
+                        else if (strcmp(op, "*")) {
+                            if (first_num != 0 && (second_num > INT_MAX / first_num || second_num < INT_MIN / first_num)) {
+                                dcX = 23; dcY = 6;
+                                dprintc("Overflow error!", 0x74);
+                                finished = true;
+                            }
+                            else {
+                                int output = first_num * second_num;
+                                int offset = int_length(output) + (output < 0 ? 2 : 1);
+                                dcX = 38 - offset; dcY = 6;
+                                dputcharc('=', 0x70);
+                                dprintintc(output, 0x70);
+                                if (history_y >= 18) right_reset();
+                                dcX = 42; dcY = history_y;
+                                dprintintc(first_num, 0x70); dputcharc(' ', 0x70); dprintc(op, 0x70); dputcharc(' ', 0x70); dprintintc(second_num, 0x70);
+                                dcX = 69 - offset; dcY++;
+                                dputcharc('=', 0x70); dprintintc(output, 0x70);
+                                dcY = dcY + 2;
+                                history_y = dcY;
+                                finished = true;
+                            }
+                        }
+                        else if (strcmp(op, "/")) {
+                            if (second_num == 0) {
+                                dcX = 17; dcY = 6;
+                                dprintc("Divide by zero error!", 0x74);
+                                finished = true;
+                            }
+                            else if (first_num == INT_MIN && second_num == -1) {
+                                dcX = 23; dcY = 6;
+                                dprintc("Overflow error!", 0x74);
+                                finished = true;
+                            }
+                            else {
+                                int output = first_num / second_num;
+                                int offset = int_length(output) + (output < 0 ? 2 : 1);
+                                dcX = 38 - offset; dcY = 6;
+                                dputcharc('=', 0x70);
+                                dprintintc(output, 0x70);
+                                if (history_y >= 18) right_reset();
+                                dcX = 42; dcY = history_y;
+                                dprintintc(first_num, 0x70); dputcharc(' ', 0x70); dprintc(op, 0x70); dputcharc(' ', 0x70); dprintintc(second_num, 0x70);
+                                dcX = 69 - offset; dcY++;
+                                dputcharc('=', 0x70); dprintintc(output, 0x70);
+                                dcY = dcY + 2;
+                                history_y = dcY;
+                                finished = true;
+                            }
+                        }
+                    }
+                    else if (num2_index == 8) {
+                        continue;
+                    }
+                    else if (isdigit(key)) {
+                        putcharc(key, 0x70);   
+                        num2[num2_index] = key;
+                        num2_index++;
+                    }
+                    else {
+                        continue;
+                    }
                 }
             }
             else {
