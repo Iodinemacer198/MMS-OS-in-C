@@ -12,6 +12,7 @@ Molecular Multiverse Services Operating System, or simply MMS-OS, is a WIP opera
     - ┕> New login graphics
     - ┕> Welcome screen
     - ┕> Calculator
+    - ┕> Bouncing ball simulation
 
 ## Use/Build instructions
 **Build from source:** (recommended)
@@ -33,7 +34,7 @@ For any questions, suggestions, issues, etc, feel free to reach out to @thereali
 ## Roadmap
 - ~~Better filesystem (preferably FAT)~~
 - ~~Better command handling~~
-- Possible graphics implementations
+- Possible basic graphics implementation (WIP!)
 
 ## Disclaimers
 MMS-OS is a VERY work-in-progress project. Lag, bugs, etc are to be expected. As more of a hobby project, also expect slow progress and a lack of functionality. This project is just for fun, don't expect much :)
