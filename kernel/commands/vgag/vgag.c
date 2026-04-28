@@ -34,6 +34,23 @@ extern int cursorY;
 int dcX;
 int dcY;
 
+unsigned int sqrt(unsigned int n) {
+    unsigned int res = 0;
+    unsigned int bit = 1 << 30; 
+    while (bit > n) bit >>= 2;
+    while (bit != 0) {
+        if (n >= res + bit) {
+            n -= res + bit;
+            res = (res >> 1) + bit;
+        } else {
+            res >>= 1;
+        }
+        bit >>= 2;
+    }
+    return res;
+}
+
+
 void dputcharc(unsigned char c, uint8_t color) {
     if (c == '\n')
     {
@@ -90,6 +107,46 @@ void dprintintc(int num, uint8_t color) {
 
     while (i--)
         dputcharc(buf[i], color);
+}
+
+void dprintfloatc(float num, uint8_t color) {
+    if (num < 0) {
+        dputcharc('-', color);
+        num = -num;
+    }
+
+    int int_part = (int)num;
+    dprintintc(int_part, color);
+
+    float frac = num - (float)int_part;
+
+    if (frac == 0.0f) {
+        return;
+    }
+
+    char buf[16];
+    int i = 0;
+
+    for (int j = 0; j < 6; j++) { 
+        frac *= 10;
+        int digit = (int)frac;
+        buf[i++] = '0' + digit;
+        frac -= digit;
+    }
+
+    while (i > 0 && buf[i - 1] == '0') {
+        i--;
+    }
+
+    if (i == 0) {
+        return;
+    }
+
+    dputcharc('.', color);
+
+    for (int j = 0; j < i; j++) {
+        dputcharc(buf[j], color);
+    }
 }
 
 void vgag_blue() {
@@ -249,7 +306,7 @@ void vgag_splitbox() {
 
     dcX = 42; dcY = 21;
     dprintmultc(0xDF, 29, 0x10); 
-    dcX = 70; dcY = 6;
+    dcX = 70; dcY = 5;
     while (dcY < 21) {
         dputcharc(0xDB, 0x0);
         dcY++;
@@ -258,6 +315,163 @@ void vgag_splitbox() {
     
     dcX = 0; dcY = 0;
 }
+
+void vgag_bigbox() {
+    dcX = 6; dcY = 3;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 66, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 6; dcY = 4;
+    while (dcY < 22) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 6;
+    } // Left side
+
+    dcX = 73; dcY = 4;
+    while (dcY < 22) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 73;
+    } // right side
+
+    dcX = 6; dcY = 22;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 66, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 7; dcY = 4;
+    while (dcY < 22) {
+        dprintmultc(0xDB, 66, 0x7);
+        dcX = 7;
+        dcY++;
+    } // Fill
+
+    dcX = 7; dcY = 23;
+    dprintmultc(0xDF, 68, 0x10); 
+    dcX = 74; dcY = 4;
+    while (dcY < 23) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 74;
+    } // Shadow
+    
+    dcX = 0; dcY = 0;
+}
+
+void vgag_bigbox2() {
+    dcX = 60; dcY = 3;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 60; dcY = 4;
+    while (dcY < 11) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 60;
+    } // Left side
+
+    dcX = 74; dcY = 4;
+    while (dcY < 11) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 74;
+    } // right side
+
+    dcX = 60; dcY = 11;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 61; dcY = 4;
+    while (dcY < 11) {
+        dprintmultc(0xDB, 13, 0x7);
+        dcX = 61;
+        dcY++;
+    } // Fill
+
+    dcX = 61; dcY = 12;
+    dprintmultc(0xDF, 15, 0x10); 
+    dcX = 75; dcY = 4;
+    while (dcY < 12) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 75;
+    } // Shadow
+
+    // blehhhh
+
+    dcX = 6; dcY = 3;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 50, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 6; dcY = 4;
+    while (dcY < 22) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 6;
+    } // Left side
+
+    dcX = 57; dcY = 4;
+    while (dcY < 22) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 57;
+    } // right side
+
+    dcX = 6; dcY = 22;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 50, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 7; dcY = 4;
+    while (dcY < 22) {
+        dprintmultc(0xDB, 50, 0x7);
+        dcX = 7;
+        dcY++;
+    } // Fill
+
+    dcX = 7; dcY = 23;
+    dprintmultc(0xDF, 52, 0x10); 
+    dcX = 58; dcY = 4;
+    while (dcY < 23) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 58;
+    } // Shadow
+
+    // super belh
+
+    dcX = 60; dcY = 14;
+    dputcharc(0xC9, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBB, 0x70); // Top
+
+    dcX = 60; dcY = 15;
+    while (dcY < 16) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 60;
+    } // Left side
+
+    dcX = 74; dcY = 15;
+    while (dcY < 16) {
+        dputcharc(0xBA, 0x70);
+        dcY++;
+        dcX = 74;
+    } // right side
+
+    dcX = 60; dcY = 16;
+    dputcharc(0xC8, 0x70); dprintmultc(0xCD, 13, 0x70); dputcharc(0xBC, 0x70); // Bottom
+
+    dcX = 61; dcY = 15;
+    while (dcY < 16) {
+        dprintmultc(0xDB, 13, 0x7);
+        dcX = 61;
+        dcY++;
+    } // Fill
+
+    dcX = 61; dcY = 17;
+    dprintmultc(0xDF, 15, 0x10); 
+    dcX = 75; dcY = 15;
+    while (dcY < 17) {
+        dputcharc(0xDB, 0x0);
+        dcY++;
+        dcX = 75;
+    } // Shadow
+    
+    dcX = 0; dcY = 0;
+}
+
 
 char usin_buffer2[20];
 int usin_index2 = 0;
@@ -757,6 +971,55 @@ void vgag_f1() {
     dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); dcX = dcX + 3; dputcharc(0xC0, 0x70); dputcharc(0xC4, 0x70); dputcharc(0xD9, 0x70); 
 }
 
+void ball(int x, int y) {
+    dcX = x; dcY = y;
+    dprintmultc(0xDB, 2, 0x55);
+}
+
+float g = 2;
+float e = 5;
+int h = 15;
+int iter = 100;
+int ps = 0;
+
+void vgag_f2() {
+    vgag_scblue();
+    vgag_bigbox2();
+    dcX = 61; dcY = 4;
+    if (ps == 0) {dprintc("g = 0.", 0x8F); dprintintc(g, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
+    else {dprintc("g = 0.", 0x70); dprintfloatc(g, 0x70); dcY = dcY + 2; dcX = 61;}
+
+    if (ps == 1) {dprintc("e = 0.", 0x8F); dprintintc(e, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
+    else {dprintc("e = 0.", 0x70); dprintfloatc(e, 0x70); dcY = dcY + 2; dcX = 61;}
+
+    if (ps == 2) {dprintc("h = ", 0x8F); dprintintc(h, 0x8F); dprintc(" < >", 0x8F);  dcY = dcY + 2; dcX = 61;}
+    else {dprintc("h = ", 0x70); dprintintc(h, 0x70);  dcY = dcY + 2; dcX = 61;}
+
+    if (ps == 3) {dprintc("i = ", 0x8F); dprintintc(iter, 0x8F); dprintc(" < >", 0x8F);}
+    else {dprintc("i = ", 0x70); dprintintc(iter, 0x70);}
+    dcX = 61; dcY = 15;
+    dputcharc(' ', 0x70); dputcharc(0x10, 0x70); dprintc(" Spacebar", 0x70);
+    ball(32, 20-h);
+}
+
+void f2_clear() {
+    dcX = 7; dcY = 4;
+    while (dcY < 22) {
+        dprintmultc(0xDB, 50, 0x7);
+        dcX = 7;
+        dcY++;
+    } 
+}
+
+void vgag_f3() {
+    vgag_scblue();
+    vgag_box();
+}
+
+float abs(float input) {
+    return (input < 0) ? -input : input;
+}
+
 char num1[9];
 bool num1_focus = true;
 int num1_index = 0;
@@ -773,6 +1036,8 @@ bool finished = false;
 int history_y = 7;
 
 bool f1_open = false;
+bool f2_open = false;
+bool f3_open = false;
 
 void debug() {
     dcX = 0; dcY = 24;
@@ -781,6 +1046,11 @@ void debug() {
     dcX = 6;
     if (num1_focus == true) dprintc("num1", 0x17);
     else if (num2_focus == true) dprintc("num2", 0x17);
+    dcX = 11;
+    dprintintc(ps, 0x17); dcX++;
+    dprintintc(g, 0x17); dcX++;
+    dprintintc(e, 0x17); dcX++;
+    dprintintc(h, 0x17); dcX++;
 }
 
 int last_dcX = 0;
@@ -863,6 +1133,7 @@ void vgag_run() {
             if (fclick == 1) vgag_bb();
             vgag_f1();
             f1_open = true;
+            f2_open = false;
             calc_reset();
         }
         else if (key == 129) {
@@ -881,6 +1152,8 @@ void vgag_run() {
             dprintmultc(0xDB, 1, 0x7);
             fclick++;
             if (fclick == 1) vgag_bb();
+            vgag_f2();
+            f2_open = true;
             f1_open = false;
         }
         else if (key == 130) {
@@ -899,7 +1172,10 @@ void vgag_run() {
             dprintmultc(0xDB, 1, 0x7);
             fclick++;
             if (fclick == 1) vgag_bb();
+            vgag_f3();
             f1_open = false;
+            f2_open = false;
+            f3_open = true;
         }
         else {
             if (f1_open == true) {   
@@ -1059,6 +1335,74 @@ void vgag_run() {
                     else {
                         continue;
                     }
+                }
+            }
+            else if (f2_open == true) { 
+                if (key == ' ') {
+                    int i = 0;
+                    float y = 20-h;        
+                    float v = 0;    
+
+                    while (i<iter) {
+                        sleep(300); 
+                        v += (g/10);    
+                        y += v;    
+
+                        if (y >= 20) { 
+                            y = 20;
+                            v = -v * (e/10); 
+                        }
+
+                        i++;
+
+                        f2_clear();
+                        ball(32, (int)y);
+                    }
+                    sleep(10000);
+                    vgag_f2();
+                }
+                else if (key == 140) {
+                    if (ps == 0) continue;
+                    else {ps--; vgag_f2();}
+                }
+                else if (key == 141) {
+                    if (ps == 3) continue;
+                    else {ps++; vgag_f2();}
+                }
+                else if (key == 142 && g != 0 && ps == 0) {
+                    g--;
+                    vgag_f2();
+                }
+                else if (key == 143 && g != 9 && ps == 0) {
+                    g++;
+                    vgag_f2();
+                }
+                else if (key == 142 && e != 0 && ps == 1) {
+                    e--;
+                    vgag_f2();
+                }
+                else if (key == 143 && e != 9 && ps == 1) {
+                    e++;
+                    vgag_f2();
+                }
+                else if (key == 142 && h != 1 && ps == 2) {
+                    h--;
+                    vgag_f2();
+                }
+                else if (key == 143 && h != 15 && ps == 2) {
+                    h++;
+                    vgag_f2();
+                }
+                else if (key == 142 && iter != 10 && ps == 3) {
+                    iter -= 10;
+                    vgag_f2();
+                }
+                else if (key == 143 && iter != 1000 && ps == 3) {
+                    iter += 10;
+                    vgag_f2();
+                }
+                else {
+                    continue;
                 }
             }
             else {

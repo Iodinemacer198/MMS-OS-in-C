@@ -406,6 +406,20 @@ char get_key() {
 
     uint8_t scancode = inb(0x60);
 
+    if (scancode == 0xE0) {
+        while (!(inb(0x64) & 1));
+        uint8_t extended = inb(0x60);
+
+        switch (extended) {
+            case 0x48: return 140; // Up
+            case 0x50: return 141; // Down
+            case 0x4B: return 142; // Left
+            case 0x4D: return 143; // Right
+        }
+
+        return 0;
+    }
+
     if (scancode == 0x2A || scancode == 0x36) {
         shift_pressed = true;
         return 0;
