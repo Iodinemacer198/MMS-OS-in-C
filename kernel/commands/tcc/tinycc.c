@@ -130,7 +130,10 @@ typedef enum {
     BUILTIN_SLEEP = 4,
     BUILTIN_CLEAR = 5,
     BUILTIN_TEST = 6,
-    BUILTIN_TIME = 7
+    BUILTIN_TIME = 7,
+    BUILTIN_PUTCHAR = 8,
+    BUILTIN_PUTCHARC = 9,
+    BUILTIN_DPUTCHARC = 10
 } TinyBuiltinId;
 
 typedef struct {
@@ -166,6 +169,9 @@ static const TinyBuiltin tiny_builtins[] = {
     {"clear", BUILTIN_CLEAR, 0, false},
     {"test", BUILTIN_TEST, 0, false},
     {"time", BUILTIN_TIME, 0, false},
+    {"putchar", BUILTIN_PUTCHAR, 1, false},
+    {"putcharc", BUILTIN_PUTCHARC, 2, false},
+    {"dputcharc", BUILTIN_DPUTCHARC, 2, false},
 };
 
 static bool tiny_streq(const char* a, const char* b) {
@@ -330,6 +336,36 @@ static bool tiny_parse_string(TinyParser* parser, char* out, int max_len) {
     return true;
 }
 
+static bool tiny_parse_char_literal(TinyParser* parser, int* value) {
+    tiny_skip_ws(parser);
+    if (parser->src[parser->pos] != '\'') {
+        return false;
+    }
+
+    parser->pos++;
+    char c = parser->src[parser->pos++];
+
+    if (c == '\\') {
+        char esc = parser->src[parser->pos++];
+        if (esc == 'n') c = '\n';
+        else if (esc == 't') c = '\t';
+        else if (esc == '\'') c = '\'';
+        else if (esc == '\\') c = '\\';
+        else {
+            tiny_set_error(parser, "Unsupported char escape sequence");
+            return false;
+        }
+    }
+
+    if (parser->src[parser->pos] != '\'') {
+        tiny_set_error(parser, "Unterminated char literal");
+        return false;
+    }
+    parser->pos++;
+    *value = (int)c;
+    return true;
+}
+
 static int tiny_find_var(TinyParser* parser, const char* name) {
     for (int i = 0; i < parser->var_count; i++) {
         if (tiny_streq(parser->vars[i], name)) {
@@ -391,6 +427,10 @@ static bool tiny_parse_factor(TinyParser* parser) {
 
     if (tiny_is_digit(parser->src[parser->pos]) || parser->src[parser->pos] == '-') {
         if (!tiny_parse_number(parser, &value)) return false;
+        return tiny_emit(parser, OP_CONST, value, 0, 0);
+    }
+    if (parser->src[parser->pos] == '\'') {
+        if (!tiny_parse_char_literal(parser, &value)) return false;
         return tiny_emit(parser, OP_CONST, value, 0, 0);
     }
 
@@ -515,7 +555,12 @@ static bool tiny_seek_main(TinyParser* parser) {
 static bool tiny_parse_statement(TinyParser* parser) {
     char name[TCC_NAME_MAX];
 
-    if (tiny_match_keyword(parser, "int")) {
+    if (tiny_match_keyword(parser, "int") ||
+        tiny_match_keyword(parser, "char") ||
+        tiny_match_keyword(parser, "short") ||
+        tiny_match_keyword(parser, "long") ||
+        tiny_match_keyword(parser, "unsigned") ||
+        tiny_match_keyword(parser, "signed")) {
         if (!tiny_parse_identifier(parser, name, TCC_NAME_MAX)) return false;
         int slot = tiny_add_var(parser, name);
         if (slot < 0) return false;
@@ -530,7 +575,13 @@ static bool tiny_parse_statement(TinyParser* parser) {
     }
 
     if (tiny_match_keyword(parser, "return")) {
-        if (!tiny_parse_expr(parser)) return false;
+        tiny_skip_ws(parser);
+        if (parser->src[parser->pos] != ';') {
+            if (!tiny_parse_expr(parser)) return false;
+        }
+        else {
+            if (!tiny_emit(parser, OP_CONST, 0, 0, 0)) return false;
+        }
         if (!tiny_expect_char(parser, ';')) return false;
         return tiny_emit(parser, OP_RET, 0, 0, 0);
     }
@@ -785,6 +836,40 @@ static bool tiny_vm_call(int builtin_id, int* stack, int* sp, const char* text, 
             return false;
         }
         printint(stack[--(*sp)]);
+        return true;
+    }
+    if (builtin_id == BUILTIN_PUTCHAR) {
+        if (*sp < 1) {
+            *runtime_error = 1;
+            return false;
+        }
+        putchar((char)stack[--(*sp)]);
+        return true;
+    }
+    if (builtin_id == BUILTIN_PUTCHARC) {
+        extern void putcharc(unsigned char c, uint8_t color);
+        int color;
+        int value;
+        if (*sp < 2) {
+            *runtime_error = 1;
+            return false;
+        }
+        color = stack[--(*sp)];
+        value = stack[--(*sp)];
+        putcharc((unsigned char)value, (uint8_t)color);
+        return true;
+    }
+    if (builtin_id == BUILTIN_DPUTCHARC) {
+        extern void dputcharc(unsigned char c, uint8_t color);
+        int color;
+        int value;
+        if (*sp < 2) {
+            *runtime_error = 1;
+            return false;
+        }
+        color = stack[--(*sp)];
+        value = stack[--(*sp)];
+        dputcharc((unsigned char)value, (uint8_t)color);
         return true;
     }
     if (builtin_id == BUILTIN_SLEEP) {
