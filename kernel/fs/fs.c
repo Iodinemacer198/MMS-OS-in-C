@@ -97,6 +97,10 @@ static const char* default_demo_source =
     "return answer;\n"
     "}";
 
+static const char* user_test = 
+    "void main() {\n"
+    "}"
+
 static int str_len(const char* str) {
     int len = 0;
     while (str[len]) len++;

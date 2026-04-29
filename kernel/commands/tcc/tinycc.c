@@ -15,6 +15,7 @@ extern bool vfs_write_file(const char* path, const char* data);
 extern uint8_t get_update_in_progress_flag();
 extern uint8_t get_rtc_register(int reg);
 extern int cursorX;
+extern uint16_t* vga;
 
 void test() {
     println("sup");
@@ -133,7 +134,8 @@ typedef enum {
     BUILTIN_TIME = 7,
     BUILTIN_PUTCHAR = 8,
     BUILTIN_PUTCHARC = 9,
-    BUILTIN_DPUTCHARC = 10
+    BUILTIN_DPUTCHARC = 10,
+    BUILTIN_VGAGB = 11
 } TinyBuiltinId;
 
 typedef struct {
@@ -172,6 +174,7 @@ static const TinyBuiltin tiny_builtins[] = {
     {"putchar", BUILTIN_PUTCHAR, 1, false},
     {"putcharc", BUILTIN_PUTCHARC, 2, false},
     {"dputcharc", BUILTIN_DPUTCHARC, 2, false},
+    {"vgag_blue", BUILTIN_VGAGB, 0, false},
 };
 
 static bool tiny_streq(const char* a, const char* b) {
@@ -870,6 +873,12 @@ static bool tiny_vm_call(int builtin_id, int* stack, int* sp, const char* text, 
         color = stack[--(*sp)];
         value = stack[--(*sp)];
         dputcharc((unsigned char)value, (uint8_t)color);
+        return true;
+    }
+    if (builtin_id == BUILTIN_VGAGB) {
+        for (int y = 0; y < 25; y++)
+            for (int x = 0; x < 80; x++)
+                vga[y * 80 + x] = (0x11 << 8) | 0xDB;
         return true;
     }
     if (builtin_id == BUILTIN_SLEEP) {
