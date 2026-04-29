@@ -535,8 +535,6 @@ void run_command() {
         println("time : Display current time and date  |  wordle : Plays a game of Wordle");
         println("music : Plays a test music file       |  cc : Build a Tiny C source file");
         println("                                      |");
-        println("cc : Build a C source file            |  cexec : Run a compiled C file");
-        println("                                      |");
         println("ls : List current directory           |  pwd : Show current path");
         println("cd : Change current directory         |  mkdir : Create directory");
         println("rmdir : Remove empty directory        |  mkf : Make a new text file");
@@ -561,8 +559,8 @@ void run_command() {
     else if (strscmp(cmd_buffer, "wordle", 6)) run_wordle();
     else if (strscmp(cmd_buffer, "rmf", 3)) rmf(getarg(cmd_buffer, 3));
     else if (strscmp(cmd_buffer, "mkf", 3)) mkf(getarg(cmd_buffer, 3));
-    else if (strscmp(cmd_buffer, "cc", 2)) run_tcc_build(getarg(cmd_buffer, 2));
-    else if (strscmp(cmd_buffer, "cexec", 5)) run_tcc_exec(getarg(cmd_buffer, 5));
+    //else if (strscmp(cmd_buffer, "cc", 2)) run_tcc_build(getarg(cmd_buffer, 2));
+    //else if (strscmp(cmd_buffer, "cexec", 5)) run_tcc_exec(getarg(cmd_buffer, 5));
     else if (strscmp(cmd_buffer, "shutdown", 8)) shutdown();
     else if (strscmp(cmd_buffer, "reboot", 6)) reboot();
     else if (strscmp(cmd_buffer, "music", 5)) play_music("0:\\music\\ode.md");

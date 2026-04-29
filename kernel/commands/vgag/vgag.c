@@ -50,7 +50,6 @@ unsigned int sqrt(unsigned int n) {
     return res;
 }
 
-
 void dputcharc(unsigned char c, uint8_t color) {
     if (c == '\n')
     {
@@ -147,6 +146,23 @@ void dprintfloatc(float num, uint8_t color) {
     for (int j = 0; j < i; j++) {
         dputcharc(buf[j], color);
     }
+}
+
+void dprintfloatcr(float num, uint8_t color) {
+    if (num < 0) {
+        dputcharc('-', color);
+        num = -num;
+    }
+
+    num = (int)(num * 10 + 0.5f) / 10.0f;
+
+    int int_part = (int)num;
+    dprintintc(int_part, color);
+
+    int decimal = (int)((num - int_part) * 10);
+
+    dputcharc('.', color);
+    dputcharc('0' + decimal, color);
 }
 
 void vgag_blue() {
@@ -471,7 +487,6 @@ void vgag_bigbox2() {
     
     dcX = 0; dcY = 0;
 }
-
 
 char usin_buffer2[20];
 int usin_index2 = 0;
@@ -976,8 +991,8 @@ void ball(int x, int y) {
     dprintmultc(0xDB, 2, 0x55);
 }
 
-float g = 2;
-float e = 5;
+float g = 9.8;
+float e = 0.5;
 int h = 15;
 int iter = 100;
 int ps = 0;
@@ -986,11 +1001,11 @@ void vgag_f2() {
     vgag_scblue();
     vgag_bigbox2();
     dcX = 61; dcY = 4;
-    if (ps == 0) {dprintc("g = 0.", 0x8F); dprintintc(g, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
-    else {dprintc("g = 0.", 0x70); dprintfloatc(g, 0x70); dcY = dcY + 2; dcX = 61;}
+    if (ps == 0) {dprintc("g = ", 0x8F); dprintfloatcr(g, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
+    else {dprintc("g = ", 0x70); dprintfloatcr(g, 0x70); dcY = dcY + 2; dcX = 61;}
 
-    if (ps == 1) {dprintc("e = 0.", 0x8F); dprintintc(e, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
-    else {dprintc("e = 0.", 0x70); dprintfloatc(e, 0x70); dcY = dcY + 2; dcX = 61;}
+    if (ps == 1) {dprintc("e = ", 0x8F); dprintfloatcr(e, 0x8F); dprintc(" < >", 0x8F); dcY = dcY + 2; dcX = 61;}
+    else {dprintc("e = ", 0x70); dprintfloatcr(e, 0x70); dcY = dcY + 2; dcX = 61;}
 
     if (ps == 2) {dprintc("h = ", 0x8F); dprintintc(h, 0x8F); dprintc(" < >", 0x8F);  dcY = dcY + 2; dcX = 61;}
     else {dprintc("h = ", 0x70); dprintintc(h, 0x70);  dcY = dcY + 2; dcX = 61;}
@@ -1345,12 +1360,12 @@ void vgag_run() {
 
                     while (i<iter) {
                         sleep(300); 
-                        v += (g/10);    
+                        v += (g/50);    
                         y += v;    
 
                         if (y >= 20) { 
                             y = 20;
-                            v = -v * (e/10); 
+                            v = -v * (e); 
                         }
 
                         i++;
@@ -1369,20 +1384,20 @@ void vgag_run() {
                     if (ps == 3) continue;
                     else {ps++; vgag_f2();}
                 }
-                else if (key == 142 && g != 0 && ps == 0) {
-                    g--;
+                else if (key == 142 && g > 0.1 && ps == 0) {
+                    g -= 0.1;
                     vgag_f2();
                 }
-                else if (key == 143 && g != 9 && ps == 0) {
-                    g++;
+                else if (key == 143 && g < 20 && ps == 0) {
+                    g += 0.1;
                     vgag_f2();
                 }
-                else if (key == 142 && e != 0 && ps == 1) {
-                    e--;
+                else if (key == 142 && e > 0.1 && ps == 1) {
+                    e -= 0.1;
                     vgag_f2();
                 }
-                else if (key == 143 && e != 9 && ps == 1) {
-                    e++;
+                else if (key == 143 && e < 1.0 && ps == 1) {
+                    e += 0.1;
                     vgag_f2();
                 }
                 else if (key == 142 && h != 1 && ps == 2) {
