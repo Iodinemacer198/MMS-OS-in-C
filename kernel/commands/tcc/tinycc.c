@@ -117,6 +117,14 @@ typedef enum {
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_EQ,
+    OP_NEQ,
+    OP_LT,
+    OP_GT,
+    OP_LTE,
+    OP_GTE,
+    OP_JZ,
+    OP_JMP,
     OP_CALL,
     OP_CALLSTR,
     OP_RET
@@ -130,7 +138,10 @@ typedef enum {
     BUILTIN_SLEEP = 4,
     BUILTIN_CLEAR = 5,
     BUILTIN_TEST = 6,
-    BUILTIN_TIME = 7
+    BUILTIN_TIME = 7,
+    BUILTIN_PUTCHAR = 8,
+    BUILTIN_PUTCHARC = 9,
+    BUILTIN_DPUTCHARC = 10
 } TinyBuiltinId;
 
 typedef struct {
@@ -166,6 +177,9 @@ static const TinyBuiltin tiny_builtins[] = {
     {"clear", BUILTIN_CLEAR, 0, false},
     {"test", BUILTIN_TEST, 0, false},
     {"time", BUILTIN_TIME, 0, false},
+    {"putchar", BUILTIN_PUTCHAR, 1, false},
+    {"putcharc", BUILTIN_PUTCHARC, 2, false},
+    {"dputcharc", BUILTIN_DPUTCHARC, 2, false},
 };
 
 static bool tiny_streq(const char* a, const char* b) {
@@ -330,6 +344,36 @@ static bool tiny_parse_string(TinyParser* parser, char* out, int max_len) {
     return true;
 }
 
+static bool tiny_parse_char_literal(TinyParser* parser, int* value) {
+    tiny_skip_ws(parser);
+    if (parser->src[parser->pos] != '\'') {
+        return false;
+    }
+
+    parser->pos++;
+    char c = parser->src[parser->pos++];
+
+    if (c == '\\') {
+        char esc = parser->src[parser->pos++];
+        if (esc == 'n') c = '\n';
+        else if (esc == 't') c = '\t';
+        else if (esc == '\'') c = '\'';
+        else if (esc == '\\') c = '\\';
+        else {
+            tiny_set_error(parser, "Unsupported char escape sequence");
+            return false;
+        }
+    }
+
+    if (parser->src[parser->pos] != '\'') {
+        tiny_set_error(parser, "Unterminated char literal");
+        return false;
+    }
+    parser->pos++;
+    *value = (int)c;
+    return true;
+}
+
 static int tiny_find_var(TinyParser* parser, const char* name) {
     for (int i = 0; i < parser->var_count; i++) {
         if (tiny_streq(parser->vars[i], name)) {
@@ -377,6 +421,7 @@ static bool tiny_emit(TinyParser* parser, TinyOpcode op, int a, int b, const cha
 }
 
 static bool tiny_parse_expr(TinyParser* parser);
+static bool tiny_parse_statement(TinyParser* parser);
 
 static bool tiny_parse_factor(TinyParser* parser) {
     char name[TCC_NAME_MAX];
@@ -391,6 +436,16 @@ static bool tiny_parse_factor(TinyParser* parser) {
 
     if (tiny_is_digit(parser->src[parser->pos]) || parser->src[parser->pos] == '-') {
         if (!tiny_parse_number(parser, &value)) return false;
+        return tiny_emit(parser, OP_CONST, value, 0, 0);
+    }
+    if (tiny_match_keyword(parser, "true")) {
+        return tiny_emit(parser, OP_CONST, 1, 0, 0);
+    }
+    if (tiny_match_keyword(parser, "false")) {
+        return tiny_emit(parser, OP_CONST, 0, 0, 0);
+    }
+    if (parser->src[parser->pos] == '\'') {
+        if (!tiny_parse_char_literal(parser, &value)) return false;
         return tiny_emit(parser, OP_CONST, value, 0, 0);
     }
 
@@ -429,7 +484,7 @@ static bool tiny_parse_term(TinyParser* parser) {
     return true;
 }
 
-static bool tiny_parse_expr(TinyParser* parser) {
+static bool tiny_parse_additive(TinyParser* parser) {
     if (!tiny_parse_term(parser)) return false;
     while (true) {
         tiny_skip_ws(parser);
@@ -446,6 +501,46 @@ static bool tiny_parse_expr(TinyParser* parser) {
         else {
             break;
         }
+    }
+    return true;
+}
+
+static bool tiny_parse_expr(TinyParser* parser) {
+    if (!tiny_parse_additive(parser)) return false;
+    while (true) {
+        TinyOpcode op;
+        tiny_skip_ws(parser);
+
+        if (parser->src[parser->pos] == '=' && parser->src[parser->pos + 1] == '=') {
+            op = OP_EQ;
+            parser->pos += 2;
+        }
+        else if (parser->src[parser->pos] == '!' && parser->src[parser->pos + 1] == '=') {
+            op = OP_NEQ;
+            parser->pos += 2;
+        }
+        else if (parser->src[parser->pos] == '<' && parser->src[parser->pos + 1] == '=') {
+            op = OP_LTE;
+            parser->pos += 2;
+        }
+        else if (parser->src[parser->pos] == '>' && parser->src[parser->pos + 1] == '=') {
+            op = OP_GTE;
+            parser->pos += 2;
+        }
+        else if (parser->src[parser->pos] == '<') {
+            op = OP_LT;
+            parser->pos++;
+        }
+        else if (parser->src[parser->pos] == '>') {
+            op = OP_GT;
+            parser->pos++;
+        }
+        else {
+            break;
+        }
+
+        if (!tiny_parse_additive(parser)) return false;
+        if (!tiny_emit(parser, op, 0, 0, 0)) return false;
     }
     return true;
 }
@@ -515,7 +610,13 @@ static bool tiny_seek_main(TinyParser* parser) {
 static bool tiny_parse_statement(TinyParser* parser) {
     char name[TCC_NAME_MAX];
 
-    if (tiny_match_keyword(parser, "int")) {
+    if (tiny_match_keyword(parser, "int") ||
+        tiny_match_keyword(parser, "bool") ||
+        tiny_match_keyword(parser, "char") ||
+        tiny_match_keyword(parser, "short") ||
+        tiny_match_keyword(parser, "long") ||
+        tiny_match_keyword(parser, "unsigned") ||
+        tiny_match_keyword(parser, "signed")) {
         if (!tiny_parse_identifier(parser, name, TCC_NAME_MAX)) return false;
         int slot = tiny_add_var(parser, name);
         if (slot < 0) return false;
@@ -528,9 +629,44 @@ static bool tiny_parse_statement(TinyParser* parser) {
         if (!tiny_expect_char(parser, ';')) return false;
         return tiny_emit(parser, OP_STORE, slot, 0, 0);
     }
+    
+    if (tiny_match_keyword(parser, "while")) {
+        int cond_start;
+        int jz_index;
+        int loop_end;
+        if (!tiny_expect_char(parser, '(')) return false;
+        cond_start = parser->code_count;
+        if (!tiny_parse_expr(parser)) return false;
+        if (!tiny_expect_char(parser, ')')) return false;
+        jz_index = parser->code_count;
+        if (!tiny_emit(parser, OP_JZ, 0, 0, 0)) return false;
+        if (!tiny_expect_char(parser, '{')) return false;
+        while (true) {
+            tiny_skip_ws(parser);
+            if (parser->src[parser->pos] == '}') {
+                parser->pos++;
+                break;
+            }
+            if (parser->src[parser->pos] == '\0') {
+                tiny_set_error(parser, "Missing closing brace in while block");
+                return false;
+            }
+            if (!tiny_parse_statement(parser)) return false;
+        }
+        if (!tiny_emit(parser, OP_JMP, cond_start, 0, 0)) return false;
+        loop_end = parser->code_count;
+        parser->code[jz_index].a = loop_end;
+        return true;
+    }
 
     if (tiny_match_keyword(parser, "return")) {
-        if (!tiny_parse_expr(parser)) return false;
+        tiny_skip_ws(parser);
+        if (parser->src[parser->pos] != ';') {
+            if (!tiny_parse_expr(parser)) return false;
+        }
+        else {
+            if (!tiny_emit(parser, OP_CONST, 0, 0, 0)) return false;
+        }
         if (!tiny_expect_char(parser, ';')) return false;
         return tiny_emit(parser, OP_RET, 0, 0, 0);
     }
@@ -697,6 +833,30 @@ static bool tiny_serialize_program(const TinyInstruction* code, int code_count, 
             case OP_DIV:
                 if (!tiny_append_str(out, &len, "DIV")) goto overflow;
                 break;
+            case OP_EQ:
+                if (!tiny_append_str(out, &len, "EQ")) goto overflow;
+                break;
+            case OP_NEQ:
+                if (!tiny_append_str(out, &len, "NEQ")) goto overflow;
+                break;
+            case OP_LT:
+                if (!tiny_append_str(out, &len, "LT")) goto overflow;
+                break;
+            case OP_GT:
+                if (!tiny_append_str(out, &len, "GT")) goto overflow;
+                break;
+            case OP_LTE:
+                if (!tiny_append_str(out, &len, "LTE")) goto overflow;
+                break;
+            case OP_GTE:
+                if (!tiny_append_str(out, &len, "GTE")) goto overflow;
+                break;
+            case OP_JZ:
+                if (!tiny_append_str(out, &len, "JZ ") || !tiny_append_int(out, &len, code[i].a)) goto overflow;
+                break;
+            case OP_JMP:
+                if (!tiny_append_str(out, &len, "JMP ") || !tiny_append_int(out, &len, code[i].a)) goto overflow;
+                break;
             case OP_CALL:
                 if (!tiny_append_str(out, &len, "CALL ") || !tiny_append_int(out, &len, code[i].a) || !tiny_append_char(out, &len, ' ') || !tiny_append_int(out, &len, code[i].b)) goto overflow;
                 break;
@@ -787,6 +947,40 @@ static bool tiny_vm_call(int builtin_id, int* stack, int* sp, const char* text, 
         printint(stack[--(*sp)]);
         return true;
     }
+    if (builtin_id == BUILTIN_PUTCHAR) {
+        if (*sp < 1) {
+            *runtime_error = 1;
+            return false;
+        }
+        putchar((char)stack[--(*sp)]);
+        return true;
+    }
+    if (builtin_id == BUILTIN_PUTCHARC) {
+        extern void putcharc(unsigned char c, uint8_t color);
+        int color;
+        int value;
+        if (*sp < 2) {
+            *runtime_error = 1;
+            return false;
+        }
+        color = stack[--(*sp)];
+        value = stack[--(*sp)];
+        putcharc((unsigned char)value, (uint8_t)color);
+        return true;
+    }
+    if (builtin_id == BUILTIN_DPUTCHARC) {
+        extern void dputcharc(unsigned char c, uint8_t color);
+        int color;
+        int value;
+        if (*sp < 2) {
+            *runtime_error = 1;
+            return false;
+        }
+        color = stack[--(*sp)];
+        value = stack[--(*sp)];
+        dputcharc((unsigned char)value, (uint8_t)color);
+        return true;
+    }
     if (builtin_id == BUILTIN_SLEEP) {
         extern void sleep(uint32_t count);
         if (*sp < 1) {
@@ -819,8 +1013,10 @@ static bool tiny_execute_program(const char* program, int* exit_code) {
     int sp = 0;
     int pc = 0;
     int index = 0;
+    int line_count = 0;
     int runtime_error = 0;
     char line[TCC_LINE_MAX];
+    char program_lines[TCC_CODE_MAX + 2][TCC_LINE_MAX];
 
     for (int i = 0; i < TCC_VAR_MAX; i++) vars[i] = 0;
 
@@ -832,13 +1028,24 @@ static bool tiny_execute_program(const char* program, int* exit_code) {
     while (program[index] != '\0' && program[index] != '\n') index++;
     if (program[index] == '\n') index++;
 
-    while (program[index] != '\0') {
+    while (program[index] != '\0' && line_count < TCC_CODE_MAX + 2) {
         int line_len = 0;
         while (program[index] != '\0' && program[index] != '\n' && line_len < TCC_LINE_MAX - 1) {
-            line[line_len++] = program[index++];
+            program_lines[line_count][line_len++] = program[index++];
+        }
+        program_lines[line_count][line_len] = '\0';
+        if (program[index] == '\n') index++;
+        line_count++;
+    }
+
+    pc = 0;
+    while (pc < line_count) {
+        int line_len = 0;
+        while (program_lines[pc][line_len] != '\0' && line_len < TCC_LINE_MAX - 1) {
+            line[line_len] = program_lines[pc][line_len];
+            line_len++;
         }
         line[line_len] = '\0';
-        if (program[index] == '\n') index++;
         if (line[0] == '\0') continue;
         if (tiny_streq(line, "END")) break;
 
@@ -884,6 +1091,42 @@ static bool tiny_execute_program(const char* program, int* exit_code) {
                 stack[sp - 2] = stack[sp - 2] / stack[sp - 1];
                 sp--;
             }
+        }
+        else if (tiny_streq(line, "EQ")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] == stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (tiny_streq(line, "NEQ")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] != stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (tiny_streq(line, "LT")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] < stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (tiny_streq(line, "GT")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] > stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (tiny_streq(line, "LTE")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] <= stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (tiny_streq(line, "GTE")) {
+            if (sp < 2) runtime_error = 1;
+            else { stack[sp - 2] = (stack[sp - 2] >= stack[sp - 1]) ? 1 : 0; sp--; }
+        }
+        else if (line[0] == 'J' && line[1] == 'Z' && line[2] == ' ') {
+            int pos = 3;
+            int target = tiny_parse_int_at(line, &pos);
+            if (sp < 1 || target < 0 || target >= line_count) runtime_error = 1;
+            else if (stack[--sp] == 0) { pc = target; continue; }
+        }
+        else if (line[0] == 'J' && line[1] == 'M' && line[2] == 'P' && line[3] == ' ') {
+            int pos = 4;
+            int target = tiny_parse_int_at(line, &pos);
+            if (target < 0 || target >= line_count) runtime_error = 1;
+            else { pc = target; continue; }
         }
         else if (line[0] == 'C' && line[1] == 'A' && line[2] == 'L' && line[3] == 'L' && line[4] == ' ') {
             int pos = 5;
