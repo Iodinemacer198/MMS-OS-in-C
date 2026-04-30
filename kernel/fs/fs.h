@@ -18,5 +18,6 @@ bool vfs_remove_dir(const char* path);
 bool vfs_change_dir(const char* path);
 void vfs_get_cwd(char* out);
 void vfs_list_current_dir();
+void vgag_list_current_dir();
 
 #endif

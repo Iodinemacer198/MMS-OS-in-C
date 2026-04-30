@@ -10,6 +10,14 @@ extern char get_key();
 extern void sleep();
 extern void printc(const char* str, uint8_t color);
 extern void printmult(unsigned char c, int l);
+extern void dputcharc(unsigned char c, uint8_t color);
+extern void dprintintc(int num, uint8_t color);
+extern void dprintc(const char* str, uint8_t color);
+extern void cd(const char* path);
+extern void dprintmultc(unsigned char c, int l, uint8_t color);
+
+extern int dcX;
+extern int dcY;
 
 extern int cursorX;
 
@@ -97,6 +105,11 @@ static const char* default_demo_source =
     "return answer;\n"
     "}";
 
+static const char* user_demo = 
+    "void main() {\n"
+    "dputcharc(11, 6, 'h', 0x17);\n"
+    "}";
+    
 static int str_len(const char* str) {
     int len = 0;
     while (str[len]) len++;
@@ -596,6 +609,10 @@ static void vfs_seed_defaults() {
         vfs_make_dir("0:\\programs");
         vfs_write_file("0:\\programs\\demo.c", default_demo_source);
     }
+    if (!vfs_read_file("0:\\vgag\\periodic.c", read_buffer) || !streq(read_buffer, user_demo)) {
+        vfs_make_dir("0:\\vgag");
+        vfs_write_file("0:\\vgag\\periodic.c", user_demo);
+    }
 }
 
 void vfs_init() {
@@ -842,6 +859,58 @@ void vfs_list_current_dir() {
         i++; p++;
     }
     putchar('\n');
+}
+
+void vgag_list_current_dir() {
+    cd("0:\\vgag");
+    dcX = 11; dcY = 6;
+    dprintc(cwd_path, 0x70); dcY++; dcX = 11;
+    dprintmultc(0xCD, 7, 0x70);
+    bool empty = true;
+    int count = 1;
+
+    int max_entries = (cwd_cluster == ROOT_CLUSTER) ? FS_ROOT_ENTRIES : ((SECTOR_SIZE * FS_SECTORS_PER_CLUSTER) / 32);
+
+    dcX = 11; dcY = 8;
+
+    for (int i = 0; i < max_entries; i++) {
+        FatDirEntry e;
+        if (!read_dir_entry(cwd_cluster, i, &e)) break;
+        if ((uint8_t)e.name[0] == 0x00 || (uint8_t)e.name[0] == 0xE5) continue;
+        if (e.attr == 0x0F) continue;
+
+        char disp[20];
+        name83_to_display(e.name, disp);
+
+        if (streq(disp, ".") || streq(disp, "..")) continue;
+
+        char full[MAX_PATH_LEN];
+        if (streq(cwd_path, "0:\\")) {
+            str_cpy(full, "0:\\");
+            str_cpy(full + 3, disp);
+        } else {
+            str_cpy(full, cwd_path);
+            int p = str_len(full);
+            full[p++] = '\\';
+            str_cpy(full + p, disp);
+        }
+
+        if (is_hidden_path(full)) continue;
+
+        if (e.attr & ATTR_DIRECTORY) {dprintintc(count, 0x70); dprintc(" [DIR] ", 0x70);} 
+        else {dprintintc(count, 0x70); dprintc(" [FILE] ", 0x70);}
+        dprintc(disp, 0x70);
+        if (!(e.attr & ATTR_DIRECTORY)) {
+            dprintc(" (", 0x70);
+            dprintintc((int)e.file_size, 0x70);
+            dprintc(" bytes)", 0x70);
+        }
+        dcX = 11; dcY++;
+        count++;
+        empty = false;
+    }
+
+    if (empty) dprintc("(empty)", 0x70);
 }
 
 void vfs_list_files() {

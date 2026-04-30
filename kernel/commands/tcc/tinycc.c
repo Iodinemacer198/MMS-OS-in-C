@@ -15,6 +15,39 @@ extern bool vfs_write_file(const char* path, const char* data);
 extern uint8_t get_update_in_progress_flag();
 extern uint8_t get_rtc_register(int reg);
 extern int cursorX;
+extern uint16_t* vga;
+extern void scroll();
+
+extern int dcX;
+extern int dcY;
+
+extern void dprintc(const char* str, uint8_t color);
+
+void tcc_dputcharc(int dcX, int dcY, unsigned char c, uint8_t color) {
+    if (c == '\n')
+    {
+        dcX = 0;
+        dcY++;
+    }
+    else
+    {
+        vga[dcY * 80 + dcX] = (color << 8) | c;
+        dcX++;
+
+        if (dcX >= 80)
+        {
+            dcX = 0;
+            dcY++;
+        }
+    }
+
+    if (dcY >= 25)
+    {
+        scroll();
+        dcY = 25 - 1;
+    }
+}
+
 
 void test() {
     println("sup");
@@ -141,7 +174,9 @@ typedef enum {
     BUILTIN_TIME = 7,
     BUILTIN_PUTCHAR = 8,
     BUILTIN_PUTCHARC = 9,
-    BUILTIN_DPUTCHARC = 10
+    BUILTIN_DPUTCHARC = 10,
+    BUILTIN_VGAGB = 11,
+    BUILTIN_VB = 12,
 } TinyBuiltinId;
 
 typedef struct {
@@ -179,7 +214,9 @@ static const TinyBuiltin tiny_builtins[] = {
     {"time", BUILTIN_TIME, 0, false},
     {"putchar", BUILTIN_PUTCHAR, 1, false},
     {"putcharc", BUILTIN_PUTCHARC, 2, false},
-    {"dputcharc", BUILTIN_DPUTCHARC, 2, false},
+    {"dputcharc", BUILTIN_DPUTCHARC, 4, false},
+    {"vgag_blue", BUILTIN_VGAGB, 0, false},
+    {"vgag_box", BUILTIN_VB, 0, false},
 };
 
 static bool tiny_streq(const char* a, const char* b) {
@@ -969,16 +1006,19 @@ static bool tiny_vm_call(int builtin_id, int* stack, int* sp, const char* text, 
         return true;
     }
     if (builtin_id == BUILTIN_DPUTCHARC) {
-        extern void dputcharc(unsigned char c, uint8_t color);
         int color;
         int value;
-        if (*sp < 2) {
+        int dy;
+        int dx;
+        if (*sp < 4) {
             *runtime_error = 1;
             return false;
         }
         color = stack[--(*sp)];
         value = stack[--(*sp)];
-        dputcharc((unsigned char)value, (uint8_t)color);
+        dy = stack[--(*sp)];
+        dx = stack[--(*sp)];
+        tcc_dputcharc((int)dx, (int)dy, (unsigned char)value, (uint8_t)color);
         return true;
     }
     if (builtin_id == BUILTIN_SLEEP) {
@@ -988,6 +1028,19 @@ static bool tiny_vm_call(int builtin_id, int* stack, int* sp, const char* text, 
             return false;
         }
         sleep((uint32_t)stack[--(*sp)]);
+        return true;
+    }
+    if (builtin_id == BUILTIN_VGAGB) {
+        for (int y = 0; y < 25; y++)
+            for (int x = 0; x < 80; x++)
+                vga[y * 80 + x] = (0x11 << 8) | 0xDB;
+        return true;
+    }
+    if (builtin_id == BUILTIN_VB) {
+        extern void vgag_box();
+        extern void vgag_scblue();
+        vgag_scblue();
+        vgag_box();
         return true;
     }
     if (builtin_id == BUILTIN_BEEP) {
@@ -1251,7 +1304,37 @@ void run_tcc_build(char* src_path) {
     print(src_path);
     print(" -> ");
     print(out_path);
-    putchar('\n');
+    //putchar('\n');
+}
+
+void discrete_run_tcc_build(char* src_path) {
+    char out_path[TCC_INPUT_MAX] = "";
+    char source[TCC_SOURCE_MAX];
+    char program[TCC_OUTPUT_MAX];
+    char error[TCC_ERROR_MAX];
+
+    if (!vfs_read_file(src_path, source)) {
+        dcX = 0; dcY = 23;
+        dprintc("Error: ", 0x17);
+        dprintc(src_path, 0x17);
+        dprintc(" not found.", 0x17);
+        return;
+    }
+
+    if (!tiny_compile_to_text(source, program, error)) {
+        dcX = 0; dcY = 23;
+        dprintc("Compile error: ", 0x17);
+        dprintc(error, 0x17);
+        return;
+    }
+
+    tiny_make_output_path(src_path, out_path);
+    if (!vfs_write_file(out_path, program)) {
+        dcX = 0; dcY = 23;
+        dprintc("Error: could not save compiled output.", 0x17);
+        return;
+    }
+
 }
 
 void run_tcc_exec(char* program_path) {
@@ -1259,16 +1342,17 @@ void run_tcc_exec(char* program_path) {
     int exit_code = 0;
 
     if (!vfs_read_file(program_path, program)) {
-        print("Error: ");
-        print(program_path);
-        println(" not found.");
+        dcX = 0; dcY = 24;
+        dprintc("Error: ", 0x17);
+        dprintc(program_path, 0x17);
+        dprintc(" not found.", 0x17);
         return;
     }
 
     if (tiny_execute_program(program, &exit_code)) {
-        putchar('\n');
-        print("Program exited with code ");
-        printint(exit_code);
-        putchar('\n');
+        //putchar('\n');
+        //print("Program exited with code ");
+        //printint(exit_code);
+        //putchar('\n');
     }
 }

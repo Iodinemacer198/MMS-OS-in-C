@@ -26,6 +26,11 @@ extern void printintc(int num, uint8_t color);
 extern uint8_t get_rtc_register(int reg);
 extern uint8_t get_update_in_progress_flag();
 extern void scroll();
+extern void cd(const char* path);
+extern void run_tcc_build(char* src_path);
+extern void run_tcc_exec(char* program_path);
+extern void discrete_run_tcc_build(char* src_path);
+extern void vgag_list_current_dir();
 
 extern uint16_t* vga;
 extern int cursorX;
@@ -1026,9 +1031,16 @@ void f2_clear() {
     } 
 }
 
+void old_vgag_f3() {
+    cd("0:\\vgag");
+    discrete_run_tcc_build("periodic.c");
+    run_tcc_exec("periodic.tbc");
+}
+
 void vgag_f3() {
     vgag_scblue();
     vgag_box();
+    vgag_list_current_dir();
 }
 
 float abs(float input) {
@@ -1418,6 +1430,11 @@ void vgag_run() {
                 }
                 else {
                     continue;
+                }
+            }
+            else if (f3_open == true) {
+                if (key == '\n') {
+                    old_vgag_f3();
                 }
             }
             else {
